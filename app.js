@@ -337,6 +337,13 @@ const imageContainer = document.getElementById("imageContainer");
 const seededitContainer = document.getElementById("seededitContainer");
 const veo3Container = document.getElementById("veo3Container");
 const videoOverlay = document.getElementById("videoOverlay");
+
+// Debug container initialization
+console.log('🔧 DOM Elements initialized:');
+console.log('  - imageContainer:', !!imageContainer);
+console.log('  - seededitContainer:', !!seededitContainer);
+console.log('  - veo3Container:', !!veo3Container);
+console.log('  - videoOverlay:', !!videoOverlay);
 const imagePromptEl = document.getElementById("imagePrompt");
 const veo3PromptEl = document.getElementById("veo3Prompt");
 const previewImageRadio = document.getElementById("previewImage");
@@ -523,7 +530,12 @@ function updatePreviewMode() {
   } else if (showEdited) {
     // Show the edited image in the preview
     const editedImageInCenter = seededitContainer.querySelector('img');
+    console.log('🔧 Edited image preview mode - found edited image element:', !!editedImageInCenter);
+    if (editedImageInCenter) {
+      console.log('🔧 Edited image src:', editedImageInCenter.src);
+    }
     if (editedImageInCenter && videoPlaceholder) {
+      console.log('✅ Creating edited image preview');
       videoPlaceholder.innerHTML = '';
       videoPlaceholder.className = 'video-placeholder with-content'; // Add class for content centering
       const previewImg = document.createElement('img');
@@ -531,12 +543,25 @@ function updatePreviewMode() {
       previewImg.style.width = '100%';
       previewImg.style.height = '100%';
       previewImg.style.objectFit = 'cover';
+      previewImg.onload = () => {
+        console.log('✅ Edited image preview loaded successfully');
+      };
+      previewImg.onerror = (e) => {
+        console.error('❌ Edited image preview loading error:', e);
+      };
       videoPlaceholder.appendChild(previewImg);
+    } else {
+      console.log('⚠️ No edited image available for preview');
     }
   } else if (showVideo) {
     // Show the generated video in the preview (if available)
     const videoInCenter = veo3Container.querySelector('video');
+    console.log('🎬 Video preview mode - found video element:', !!videoInCenter);
+    if (videoInCenter) {
+      console.log('🎬 Video src:', videoInCenter.src);
+    }
     if (videoInCenter && videoPlaceholder) {
+      console.log('✅ Creating video preview');
       videoPlaceholder.innerHTML = '';
       videoPlaceholder.className = 'video-placeholder with-content'; // Add class for content centering
       const previewVideo = document.createElement('video');
@@ -548,9 +573,16 @@ function updatePreviewMode() {
       previewVideo.style.height = '100%';
       previewVideo.style.objectFit = 'cover';
       previewVideo.id = 'previewVideoElement'; // Add ID for audio control
+      previewVideo.onloadedmetadata = () => {
+        console.log('✅ Preview video metadata loaded');
+      };
+      previewVideo.onerror = (e) => {
+        console.error('❌ Preview video loading error:', e);
+      };
       videoPlaceholder.appendChild(previewVideo);
     } else {
       // No video available, show placeholder
+      console.log('⚠️ No video available for preview');
       videoPlaceholder.className = 'video-placeholder'; // Reset to default for placeholder text
       videoPlaceholder.innerHTML = '<span>Generated video will appear here</span>';
     }
@@ -883,30 +915,39 @@ async function callOpenAIForPrompts(profile) {
     const timesOfDay = ['Amanhecer', 'Meio-dia ensolarado', 'Final de tarde', 'Anoitecer', 'Noite'];
     const randomTimeOfDay = timesOfDay[Math.floor(Math.random() * timesOfDay.length)];
     
-    // Random video text templates with varied themes (~20 words each)
-    const videoTexts = [
-      `Iaí pessoal! Aqui em {city}, {product} triplicou meu faturamento! Negócio que era difícil ficou super fácil!`,
-      `Bom dia galera! {product} mudou tudo aqui em {city}! Agora consigo focar no que realmente importa: crescer!`,
-      `E aí! Desde que comecei a usar {product} em {city}, meus clientes ficaram impressionados com a praticidade!`,
-      `Oi gente! {product} é o futuro dos negócios aqui em {city}! Quem não usar vai ficar pra trás!`,
-      `Salve! Meu negócio em {city} explodiu depois que descobri {product}! Agora tudo funciona no automático!`,
-      `Eaí galera! {product} economizou tanto tempo aqui em {city} que sobra pra família! Vale cada centavo!`,
-      `Opa! Todo empresário de {city} deveria conhecer {product}! Minha vida de empreendedor nunca foi tão tranquila!`,
-      `Beleza! Com {product} aqui em {city}, consegui automatizar coisas que antes davam muito trabalho! Sensacional!`,
-      `E aí pessoal! {product} é tipo ter um assistente pessoal 24h aqui em {city}! Revolucionou meu dia!`,
-      `Oi! Quem tem negócio em {city} precisa conhecer {product}! Meus resultados melhoraram em todas as áreas!`,
-      `Olá! {product} transformou meu negócio em {city} numa máquina de fazer dinheiro! Recomendo demais!`,
-      `Iaí! Antes de usar {product} em {city}, eu vivia estressado. Hoje meu negócio roda sozinho!`,
-      `Salve galera! {product} deixou meu negócio em {city} tão organizado que até sobra tempo pra inovar!`,
-      `Opa pessoal! Desde que uso {product} aqui em {city}, meus concorrentes perguntam qual é meu segredo!`,
-      `E aí! {product} é a melhor decisão que tomei pro meu negócio em {city}! Mudança total de vida!`,
-      `Beleza galera! Com {product}, meu negócio em {city} cresceu tanto que tive que contratar mais gente!`,
-      `Oi! {product} fez meu negócio em {city} funcionar 10x melhor! Agora sim sou um empreendedor de verdade!`,
-      `Iaí pessoal! {product} é como ter superpoderes para negócios aqui em {city}! Eficiência no máximo!`,
-      `Salve! Todo mundo em {city} quer saber como meu negócio cresceu tanto! A resposta é {product}!`,
-      `E aí galera! {product} transformou meu negócio em {city} de sobrevivência pra sucesso! Incrível mesmo!`
-    ];
-    const randomVideoText = videoTexts[Math.floor(Math.random() * videoTexts.length)];
+    // Create business-specific video messages based on CNAE
+    function getBusinessSpecificMessage(cnae, city, product) {
+      const businessType = cnae ? cnae.split(' - ')[1]?.toLowerCase() : '';
+      
+      if (businessType.includes('instrumento') || businessType.includes('música')) {
+        return [
+          `Iaí pessoal! Aqui na minha loja de instrumentos em ${city}, ${product} organizou todo meu estoque! Agora sei exatamente qual violão tenho!`,
+          `E aí galera! ${product} revolucionou minha loja de música em ${city}! Agora controlo vendas de guitarra, bateria, tudo!`,
+          `Opa! Todo mundo que tem loja de instrumentos em ${city} precisa conhecer ${product}! Facilita demais!`
+        ];
+      } else if (businessType.includes('padaria')) {
+        return [
+          `Bom dia! ${product} transformou minha padaria em ${city}! Agora controlo pães, doces, tudo digitalizado!`,
+          `E aí pessoal! Desde que uso ${product} na padaria em ${city}, nunca mais perdi controle do estoque!`
+        ];
+      } else if (businessType.includes('farmácia')) {
+        return [
+          `Oi gente! ${product} organizou toda minha farmácia em ${city}! Controle de remédios nunca foi tão fácil!`,
+          `E aí! ${product} é essencial pra quem tem farmácia em ${city}! Gestão completa de medicamentos!`
+        ];
+      } else {
+        // Generic business messages
+        return [
+          `Iaí pessoal! Aqui em ${city}, ${product} triplicou meu faturamento! Negócio que era difícil ficou super fácil!`,
+          `Bom dia galera! ${product} mudou tudo aqui em ${city}! Agora consigo focar no que realmente importa: crescer!`,
+          `E aí! Desde que comecei a usar ${product} em ${city}, meus clientes ficaram impressionados com a praticidade!`,
+          `Oi gente! ${product} é o futuro dos negócios aqui em ${city}! Quem não usar vai ficar pra trás!`
+        ];
+      }
+    }
+    
+    const businessMessages = getBusinessSpecificMessage(profile.cnae, profile.city, profile.productCallout || 'o Dinn');
+    const randomVideoText = businessMessages[Math.floor(Math.random() * businessMessages.length)];
     console.log('🌅 Horário randomizado:', randomTimeOfDay); // Debug
     
     const randomEthnicity = getRandomEthnicity();
@@ -947,9 +988,10 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "AMBIENTES EXTERNOS: Para atividades ao ar livre, use pontos turísticos da cidade (Cristo Redentor-RJ, Elevador Lacerda-Salvador, Avenida Paulista-SP, Pelourinho-Salvador, Pão de Açúcar-RJ, etc.)",
         `ETNIA OBRIGATÓRIA: Use sempre '${randomEthnicity}' para garantir diversidade racial brasileira`,
         `CIDADE OBRIGATÓRIA: Use sempre '${profile.city}' (SEM região) - NUNCA use outras cidades como Rio, São Paulo, Salvador, etc.`,
-        `CNAE DO CLIENTE: ${profile.cnae || 'negócio genérico'} - USE O TIPO ESPECÍFICO DE NEGÓCIO (joalheria, marcenaria, restaurante, etc.)`,
+        `CNAE DO CLIENTE: ${profile.cnae || 'negócio genérico'} - USE O TIPO ESPECÍFICO DE NEGÓCIO (loja de instrumentos musicais, marcenaria, restaurante, etc.)`,
         `GÊNERO DA PESSOA: ${profile.gender || 'Auto'} - NOME DO DONO: "${profile.ownerName}" - Se for nome masculino (João, Carlos, Rodrigo, etc.), use "Um homem brasileiro". Se feminino (Maria, Ana, etc.), use "Uma mulher brasileira". OBRIGATÓRIO analisar o nome!`,
         `CONTEXTO PROFISSIONAL: Adicione sutilmente roupa e localização apropriadas para a profissão (ex: "jaleco branco", "uniforme de trabalho", "terno", "avental"). Para localização, varie entre "interior" ou "exterior" conforme apropriado para a profissão.`,
+        `CONTEXTO DE NEGÓCIO: Para loja de instrumentos musicais, inclua elementos como "violões ao fundo", "teclados expostos", "ambiente musical". Para outros negócios, use elementos específicos do ramo.`,
         "",
         "ESTRUTURA PARA IMAGE_PROMPT:",
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], interior/exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, descrição cinematográfica, sem letreiros visíveis'`,
@@ -960,11 +1002,11 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], mesmo ambiente da imagem na ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}'`,
         `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada].'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
-        `4. FALA: 'fala da pessoa: "${randomVideoText.replace('{city}', profile.city).replace('{product}', profile.productCallout || 'o Dinn')}"'`,
+        `4. FALA: 'fala da pessoa: "${randomVideoText}"'`,
         "",
         `Exemplo de estrutura (USE OS DADOS EXATOS DO PERFIL):`,
         `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText.replace('{city}', profile.city).replace('{product}', profile.productCallout || 'o Dinn')}"'`,
+        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText}"'`,
         "",
         "",
         "INSTRUÇÕES CRÍTICAS FINAIS:",
@@ -1111,15 +1153,32 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     // Ensure we have both prompts with correct structure
     if (!json.image_prompt) {
       const city = profile.city || 'Brasil';
-      json.image_prompt = `Meio da tarde, interior de uma loja brasileira moderna, iluminação natural, ao fundo produtos e clientes, sem letreiros visíveis. Uma pessoa brasileira de aparência simpática, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
+      const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
+      const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
+      json.image_prompt = `Meio da tarde, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira de aparência simpática, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
     }
     
     if (!json.video_prompt) {
       const city = profile.city || 'sua cidade';
       const product = profile.productCallout || 'o Dinn';
-      json.video_prompt = `Meio da tarde, interior de uma loja brasileira moderna, iluminação natural, ao fundo produtos e clientes, sem letreiros visíveis. Uma pessoa brasileira de aparência simpática, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
+      const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
+      const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
+      
+      // Use business-specific message
+      let fallbackMessage;
+      if (businessType.includes('instrumento') || businessType.includes('música')) {
+        fallbackMessage = `Iaí pessoal! Aqui na minha loja de instrumentos em ${city}, ${product} organizou todo meu estoque! Agora sei exatamente qual violão tenho!`;
+      } else if (businessType.includes('padaria')) {
+        fallbackMessage = `Bom dia! ${product} transformou minha padaria em ${city}! Agora controlo pães, doces, tudo digitalizado!`;
+      } else if (businessType.includes('farmácia')) {
+        fallbackMessage = `Oi gente! ${product} organizou toda minha farmácia em ${city}! Controle de remédios nunca foi tão fácil!`;
+      } else {
+        fallbackMessage = `Iaí pessoal! Aqui em ${city}, ${product} triplicou meu faturamento! Negócio que era difícil ficou super fácil!`;
+      }
+      
+      json.video_prompt = `Meio da tarde, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira de aparência simpática, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
 
-fala da pessoa: "Iaí pessoal! ${product} triplicou meu faturamento aqui em ${city}! Negócio que era difícil ficou super fácil!"`;
+fala da pessoa: "${fallbackMessage}"`;
     }
     
     // Add default overlay and button text if not provided
@@ -1431,7 +1490,9 @@ async function generateImage(imagePrompt) {
 
 async function generateSeededit(imageUrl) {
   try {
+    console.log('🔧 Starting text removal process with imageUrl:', imageUrl);
     if (!imageUrl) {
+      console.log('❌ No image URL provided for text removal');
       if (seededitStatus) seededitStatus.textContent = "No image to process.";
       return null;
     }
@@ -1576,20 +1637,42 @@ async function generateSeededit(imageUrl) {
       editedImageUrl = j.url;
     }
     
+    console.log('🔧 Text removal completed. EditedImageUrl:', editedImageUrl);
+    console.log('🔧 SeededitContainer exists:', !!seededitContainer);
+    
     if (editedImageUrl && seededitContainer) {
+      console.log('✅ Creating text-removed image element');
       const img = document.createElement("img");
       img.src = editedImageUrl;
+      img.onload = () => {
+        console.log('✅ Text-removed image loaded successfully');
+      };
+      img.onerror = (e) => {
+        console.error('❌ Text-removed image loading error:', e);
+        console.error('❌ Failed image URL:', editedImageUrl);
+      };
+      img.style.width = '100%';
+      img.style.height = 'auto';
+      img.style.maxHeight = '400px';
+      img.style.objectFit = 'contain';
+      
       seededitContainer.innerHTML = "";
       seededitContainer.appendChild(img);
+      
       const a = document.createElement("a");
-      a.href = editedImageUrl; a.download = "text-removed-image.png"; a.textContent = "📥 Download";
+      a.href = editedImageUrl; 
+      a.download = "text-removed-image.png"; 
+      a.textContent = "📥 Download";
       a.className = "download-btn";
       seededitContainer.appendChild(a);
+      
       if (seededitStatus) seededitStatus.textContent = "Done.";
       
       // Update preview if showing image
+      console.log('🔄 Updating preview mode after text removal');
       updatePreviewMode();
     } else {
+      console.log('❌ Text removal failed - editedImageUrl:', editedImageUrl, 'seededitContainer:', !!seededitContainer);
       if (seededitStatus) seededitStatus.textContent = "Text removal failed.";
     }
     return editedImageUrl;
@@ -1778,9 +1861,16 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
        videoUrl = j.url;
      }
     if (videoUrl && veo3Container) {
+      console.log('🎬 Creating video element with URL:', videoUrl);
       const video = document.createElement("video");
       video.controls = true;
       video.src = videoUrl;
+      video.onloadedmetadata = () => {
+        console.log('✅ Video metadata loaded successfully');
+      };
+      video.onerror = (e) => {
+        console.error('❌ Video loading error:', e);
+      };
       veo3Container.innerHTML = "";
       veo3Container.appendChild(video);
       const a = document.createElement("a");
@@ -1789,10 +1879,12 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
       veo3Container.appendChild(a);
       
       // Update preview based on current mode
+      console.log('🔄 Updating preview mode after video creation');
       updatePreviewMode();
       
       if (veo3Status) veo3Status.textContent = "Done.";
     } else {
+      console.log('❌ Video generation failed - videoUrl:', videoUrl, 'veo3Container:', !!veo3Container);
       if (veo3Status) veo3Status.textContent = "Veo3 video generation failed.";
     }
     return videoUrl;
