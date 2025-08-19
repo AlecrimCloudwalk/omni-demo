@@ -458,55 +458,7 @@ function getRandomEthnicity() {
   return getRandomFromArray(ETHNICITIES);
 }
 
-function getProfessionalAttire(cnae) {
-  if (!cnae) return null;
-  
-  const businessType = cnae.split(' - ')[1]?.toLowerCase() || '';
-  
-  // Map business types to professional attire hints
-  const professionalMappings = {
-    'odontologia': ['jaleco branco', 'scrubs azuis claros', 'uniforme médico branco'],
-    'fisioterapia': ['scrubs azuis', 'jaleco branco', 'uniforme clínico azul claro'],
-    'laboratório': ['jaleco branco', 'uniforme laboratorial branco'],
-    'psicologia': ['roupa social elegante', 'blazer neutro', 'camisa social'],
-    'nutrição': ['jaleco branco', 'uniforme profissional branco'],
-    'acupuntura': ['roupa profissional neutra', 'jaleco branco'],
-    'clínica veterinária': ['jaleco veterinário', 'scrubs veterinários', 'uniforme clínico'],
-    'marcenaria': ['avental de couro', 'roupa de trabalho resistente', 'camisa de trabalho'],
-    'serralheria': ['uniforme de trabalho', 'avental de proteção', 'roupa de oficina'],
-    'oficina mecânica': ['macacão de mecânico', 'uniforme de oficina', 'roupa de trabalho azul'],
-    'oficina de motos': ['uniforme de mecânico', 'roupa de trabalho', 'avental de oficina'],
-    'borracharia': ['uniforme de trabalho', 'roupa de oficina', 'avental protetor'],
-    'escola particular': ['roupa social', 'blazer educacional', 'camisa social'],
-    'creche': ['uniforme escolar', 'avental educacional', 'roupa confortável'],
-    'autoescola': ['camisa polo', 'uniforme de instrutor', 'roupa profissional'],
-    'escola de dança': ['roupa de dança', 'uniforme de professor', 'roupas esportivas'],
-    'escola de idiomas': ['roupa social casual', 'blazer educacional', 'camisa social'],
-    'escritório de advocacia': ['terno executivo', 'blazer jurídico', 'roupa social formal'],
-    'salão de beleza': ['avental de cabeleireiro', 'uniforme de salão', 'roupa profissional'],
-    'barbearia': ['avental de barbeiro', 'uniforme de barbearia', 'camisa profissional'],
-    'estética e cosméticos': ['jaleco estético', 'uniforme de estética', 'roupa profissional branca'],
-    'farmácia': ['jaleco farmacêutico', 'uniforme farmacêutico branco', 'avental farmacêutico']
-  };
-  
-  const attireOptions = professionalMappings[businessType];
-  if (attireOptions) {
-    return attireOptions[Math.floor(Math.random() * attireOptions.length)];
-  }
-  
-  return null;
-}
-
-function getRandomClothingColor(cnae = null) {
-  // 40% chance to use professional attire if CNAE suggests it
-  if (cnae && Math.random() < 0.4) {
-    const professionalAttire = getProfessionalAttire(cnae);
-    if (professionalAttire) {
-      return professionalAttire;
-    }
-  }
-  
-  // Fall back to original color system (preserves existing variety)
+function getRandomClothingColor() {
   const random = Math.random();
   
   if (random < 0.75) {
@@ -958,7 +910,7 @@ async function callOpenAIForPrompts(profile) {
     console.log('🌅 Horário randomizado:', randomTimeOfDay); // Debug
     
     const randomEthnicity = getRandomEthnicity();
-    const randomClothing = getRandomClothingColor(profile.cnae);
+    const randomClothing = getRandomClothingColor();
     
     const system = `Você é um roteirista e especialista em criação de prompts descritivos para geração de imagens e vídeos realistas em estilo POV (primeira pessoa) e selfie vlog com ultra realismo, 4K, efeitos sonoros integrados e coerência narrativa.
 
@@ -997,21 +949,22 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `CIDADE OBRIGATÓRIA: Use sempre '${profile.city}' (SEM região) - NUNCA use outras cidades como Rio, São Paulo, Salvador, etc.`,
         `CNAE DO CLIENTE: ${profile.cnae || 'negócio genérico'} - USE O TIPO ESPECÍFICO DE NEGÓCIO (joalheria, marcenaria, restaurante, etc.)`,
         `GÊNERO DA PESSOA: ${profile.gender || 'Auto'} - NOME DO DONO: "${profile.ownerName}" - Se for nome masculino (João, Carlos, Rodrigo, etc.), use "Um homem brasileiro". Se feminino (Maria, Ana, etc.), use "Uma mulher brasileira". OBRIGATÓRIO analisar o nome!`,
+        `CONTEXTO PROFISSIONAL: Adicione sutilmente roupa e localização apropriadas para a profissão (ex: "jaleco branco", "uniforme de trabalho", "terno", "avental"). Para localização, varie entre "interior" ou "exterior" conforme apropriado para a profissão.`,
         "",
         "ESTRUTURA PARA IMAGE_PROMPT:",
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], interior/exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, descrição cinematográfica, sem letreiros visíveis'`,
-        `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], ${randomClothing}.'`,
+        `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada].'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
         "",
         "ESTRUTURA PARA VIDEO_PROMPT:",  
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], mesmo ambiente da imagem na ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}'`,
-        `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], ${randomClothing}.'`,
+        `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada].'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
         `4. FALA: 'fala da pessoa: "${randomVideoText.replace('{city}', profile.city).replace('{product}', profile.productCallout || 'o Dinn')}"'`,
         "",
         `Exemplo de estrutura (USE OS DADOS EXATOS DO PERFIL):`,
-        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, ${profile.region}, [aparência detalhada], ${randomClothing}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, [aparência detalhada], ${randomClothing}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText.replace('{city}', profile.city).replace('{product}', profile.productCallout || 'o Dinn')}"'`,
+        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
+        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText.replace('{city}', profile.city).replace('{product}', profile.productCallout || 'o Dinn')}"'`,
         "",
         "",
         "INSTRUÇÕES CRÍTICAS FINAIS:",
