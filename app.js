@@ -1186,10 +1186,13 @@ async function generateImage(imagePrompt) {
 
         const result = await response.json();
         console.log('✅ Replicate response via Supabase Edge Function received');
+        console.log('🔍 Full Replicate result:', result);
         
         if (result.output && result.output.length > 0) {
           imageUrl = result.output[0];
+          console.log('📸 Image URL extracted:', imageUrl);
         } else {
+          console.error('❌ No output in result:', result);
           throw new Error('No image URL in response');
         }
         

@@ -122,6 +122,7 @@ serve(async (req) => {
         
         if (pollData.status === 'succeeded') {
           console.log('✅ Prediction completed successfully')
+          console.log('📸 Output URLs:', pollData.output)
           return new Response(
             JSON.stringify(pollData), 
             { 
