@@ -788,8 +788,8 @@ async function onGenerate() {
     console.log('🔍 Start frame checkbox element found:', !!useStartFrameEl);
     console.log('🔍 Start frame checkbox state:', useStartFrameEl?.checked);
     console.log('🔍 Available URLs for start frame:');
-    console.log('  - imageUrl:', imageUrl ? imageUrl.substring(0, 50) + '...' : 'null');
-    console.log('  - editedImageUrl:', editedImageUrl ? editedImageUrl.substring(0, 50) + '...' : 'null');
+    console.log('  - imageUrl:', imageUrl || 'null');
+    console.log('  - editedImageUrl:', editedImageUrl || 'null');
     
     if (useStartFrameEl.checked) {
       const candidateUrl = editedImageUrl || imageUrl;
@@ -1074,9 +1074,20 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
           throw new Error(`Supabase Edge Function failed: ${response.status}`);
         }
 
-        json = await response.json();
+        const openaiResponse = await response.json();
         console.log('✅ OpenAI response via Supabase Edge Function received');
-        console.log('🔍 Full OpenAI response:', JSON.stringify(json, null, 2));
+        console.log('🔍 Full OpenAI response:', JSON.stringify(openaiResponse, null, 2));
+        
+        // Parse the actual content from OpenAI response
+        try {
+          const content = openaiResponse.choices[0].message.content;
+          console.log('🔍 OpenAI content to parse:', content);
+          json = JSON.parse(content);
+          console.log('🔍 Parsed JSON from content:', JSON.stringify(json, null, 2));
+        } catch (e) {
+          console.error('❌ Failed to parse OpenAI content:', e);
+          throw new Error(`Failed to parse OpenAI response: ${e.message}`);
+        }
         
       } catch (error) {
         console.error('🚨 Supabase Edge Function call failed:', error);
