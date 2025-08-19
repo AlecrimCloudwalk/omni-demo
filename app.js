@@ -1066,6 +1066,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
 
         json = await response.json();
         console.log('✅ OpenAI response via Supabase Edge Function received');
+        console.log('🔍 Full OpenAI response:', JSON.stringify(json, null, 2));
         
       } catch (error) {
         console.error('🚨 Supabase Edge Function call failed:', error);
@@ -1126,6 +1127,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
           const content = openaiResponse.choices[0].message.content;
           console.log('OpenAI raw response:', content); // Debug
           json = JSON.parse(content);
+          console.log('🔍 Full OpenAI parsed response (fallback):', JSON.stringify(json, null, 2));
         } catch (e) {
           console.error('JSON parse error:', e);
           console.error('OpenAI response was:', openaiResponse.choices[0].message.content);
@@ -1182,12 +1184,22 @@ fala da pessoa: "${fallbackMessage}"`;
     }
     
     // Add default overlay and button text if not provided
+    console.log('🔍 Checking overlay/button text from OpenAI:');
+    console.log('  - overlay_text:', json.overlay_text);
+    console.log('  - button_text:', json.button_text);
+    
     if (!json.overlay_text) {
+      console.log('⚠️ No overlay_text from OpenAI, using fallback');
       json.overlay_text = "Tap to Pay\nno iPhone";
     }
     if (!json.button_text) {
+      console.log('⚠️ No button_text from OpenAI, using fallback');
       json.button_text = "Começar a usar";
     }
+    
+    console.log('🎯 Final overlay/button text to be used:');
+    console.log('  - overlay_text:', json.overlay_text);
+    console.log('  - button_text:', json.button_text);
     
     // Apply pronunciation improvements to video_prompt only
     if (json.video_prompt) {
