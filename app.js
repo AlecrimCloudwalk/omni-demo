@@ -458,7 +458,55 @@ function getRandomEthnicity() {
   return getRandomFromArray(ETHNICITIES);
 }
 
-function getRandomClothingColor() {
+function getProfessionalAttire(cnae) {
+  if (!cnae) return null;
+  
+  const businessType = cnae.split(' - ')[1]?.toLowerCase() || '';
+  
+  // Map business types to professional attire hints
+  const professionalMappings = {
+    'odontologia': ['jaleco branco', 'scrubs azuis claros', 'uniforme médico branco'],
+    'fisioterapia': ['scrubs azuis', 'jaleco branco', 'uniforme clínico azul claro'],
+    'laboratório': ['jaleco branco', 'uniforme laboratorial branco'],
+    'psicologia': ['roupa social elegante', 'blazer neutro', 'camisa social'],
+    'nutrição': ['jaleco branco', 'uniforme profissional branco'],
+    'acupuntura': ['roupa profissional neutra', 'jaleco branco'],
+    'clínica veterinária': ['jaleco veterinário', 'scrubs veterinários', 'uniforme clínico'],
+    'marcenaria': ['avental de couro', 'roupa de trabalho resistente', 'camisa de trabalho'],
+    'serralheria': ['uniforme de trabalho', 'avental de proteção', 'roupa de oficina'],
+    'oficina mecânica': ['macacão de mecânico', 'uniforme de oficina', 'roupa de trabalho azul'],
+    'oficina de motos': ['uniforme de mecânico', 'roupa de trabalho', 'avental de oficina'],
+    'borracharia': ['uniforme de trabalho', 'roupa de oficina', 'avental protetor'],
+    'escola particular': ['roupa social', 'blazer educacional', 'camisa social'],
+    'creche': ['uniforme escolar', 'avental educacional', 'roupa confortável'],
+    'autoescola': ['camisa polo', 'uniforme de instrutor', 'roupa profissional'],
+    'escola de dança': ['roupa de dança', 'uniforme de professor', 'roupas esportivas'],
+    'escola de idiomas': ['roupa social casual', 'blazer educacional', 'camisa social'],
+    'escritório de advocacia': ['terno executivo', 'blazer jurídico', 'roupa social formal'],
+    'salão de beleza': ['avental de cabeleireiro', 'uniforme de salão', 'roupa profissional'],
+    'barbearia': ['avental de barbeiro', 'uniforme de barbearia', 'camisa profissional'],
+    'estética e cosméticos': ['jaleco estético', 'uniforme de estética', 'roupa profissional branca'],
+    'farmácia': ['jaleco farmacêutico', 'uniforme farmacêutico branco', 'avental farmacêutico']
+  };
+  
+  const attireOptions = professionalMappings[businessType];
+  if (attireOptions) {
+    return attireOptions[Math.floor(Math.random() * attireOptions.length)];
+  }
+  
+  return null;
+}
+
+function getRandomClothingColor(cnae = null) {
+  // 40% chance to use professional attire if CNAE suggests it
+  if (cnae && Math.random() < 0.4) {
+    const professionalAttire = getProfessionalAttire(cnae);
+    if (professionalAttire) {
+      return professionalAttire;
+    }
+  }
+  
+  // Fall back to original color system (preserves existing variety)
   const random = Math.random();
   
   if (random < 0.75) {
@@ -754,7 +802,22 @@ async function onGenerate() {
     // Use start frame: prefer edited image, fallback to original image
     let startFrameUrl = null;
     if (useStartFrameEl.checked) {
-      startFrameUrl = editedImageUrl || imageUrl;
+      const candidateUrl = editedImageUrl || imageUrl;
+      
+      // Validate start frame URL before using it
+      if (candidateUrl) {
+        try {
+          new URL(candidateUrl);
+          startFrameUrl = candidateUrl;
+          console.log('✅ Valid start frame URL:', startFrameUrl);
+        } catch (e) {
+          console.error('❌ Invalid start frame URL:', candidateUrl, e);
+          console.warn('⚠️ Proceeding without start frame due to invalid URL');
+          startFrameUrl = null;
+        }
+      } else {
+        console.log('ℹ️ No image URL available for start frame');
+      }
     }
     
     veo3Url = await generateVeo3Video(promptResult.video_prompt, startFrameUrl);
@@ -895,7 +958,7 @@ async function callOpenAIForPrompts(profile) {
     console.log('🌅 Horário randomizado:', randomTimeOfDay); // Debug
     
     const randomEthnicity = getRandomEthnicity();
-    const randomClothing = getRandomClothingColor();
+    const randomClothing = getRandomClothingColor(profile.cnae);
     
     const system = `Você é um roteirista e especialista em criação de prompts descritivos para geração de imagens e vídeos realistas em estilo POV (primeira pessoa) e selfie vlog com ultra realismo, 4K, efeitos sonoros integrados e coerência narrativa.
 
@@ -1638,10 +1701,43 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
 
         const result = await response.json();
         console.log('✅ Replicate Video response via Supabase Edge Function received');
+        console.log('🔍 Full Video result:', JSON.stringify(result, null, 2));
+        console.log('🔍 Video result status:', result.status);
+        console.log('🔍 Video result output type:', typeof result.output);
+        console.log('🔍 Video result output:', result.output);
         
-        if (result.output && result.output.length > 0) {
-          videoUrl = result.output[0];
+        // Handle different possible response formats
+        let extractedUrl = null;
+        
+        if (result.output) {
+          if (Array.isArray(result.output) && result.output.length > 0) {
+            extractedUrl = result.output[0];
+            console.log('🎬 Video URL extracted from array:', extractedUrl);
+          } else if (typeof result.output === 'string') {
+            extractedUrl = result.output;
+            console.log('🎬 Video URL extracted as string:', extractedUrl);
+          } else {
+            console.error('❌ Unexpected video output format:', typeof result.output, result.output);
+          }
+        }
+        
+        // Validate URL before using it
+        if (extractedUrl) {
+          try {
+            const urlObj = new URL(extractedUrl);
+            if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+              videoUrl = extractedUrl;
+              console.log('✅ Valid video URL confirmed:', videoUrl);
+            } else {
+              console.error('❌ Invalid video URL protocol:', urlObj.protocol);
+              throw new Error(`Invalid video URL protocol: ${urlObj.protocol}`);
+            }
+          } catch (urlError) {
+            console.error('❌ Invalid video URL format:', extractedUrl, urlError);
+            throw new Error(`Invalid video URL format: ${extractedUrl}`);
+          }
         } else {
+          console.error('❌ No valid video URL found in result:', result);
           throw new Error('No video URL in response');
         }
         
