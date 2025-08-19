@@ -745,11 +745,15 @@ async function onGenerate() {
   }
   
   console.log('Generation complete:', { 
-    imageUrl: !!imageUrl, 
-    veo3Url: !!veo3Url,
+    imageUrl: imageUrl ? imageUrl.substring(0, 50) + '...' : null, 
+    veo3Url: veo3Url ? veo3Url.substring(0, 50) + '...' : null,
     imageEnabled: enableImageEl.checked,
     veo3Enabled: enableVeo3El.checked
   });
+  
+  // Additional debug logging
+  if (imageUrl) console.log('🔗 Full imageUrl:', imageUrl);
+  if (veo3Url) console.log('🎬 Full veo3Url:', veo3Url);
 
   lockUI(false);
 }
@@ -1178,21 +1182,65 @@ async function generateImage(imagePrompt) {
           body: JSON.stringify(body)
         });
         
+        // Log response details for debugging
+        console.log('📊 Response status:', response.status);
+        console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('📊 Response content-type:', response.headers.get('content-type'));
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('🚨 Supabase Replicate Edge Function error:', response.status, errorText);
           throw new Error(`Supabase Replicate Edge Function failed: ${response.status}`);
         }
 
+        // Check content type before parsing JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const textContent = await response.text();
+          console.error('❌ Unexpected content type:', contentType);
+          console.error('❌ Response body:', textContent);
+          throw new Error(`Expected JSON response, got: ${contentType}`);
+        }
+
         const result = await response.json();
         console.log('✅ Replicate response via Supabase Edge Function received');
-        console.log('🔍 Full Replicate result:', result);
+        console.log('🔍 Full Replicate result:', JSON.stringify(result, null, 2));
+        console.log('🔍 Result status:', result.status);
+        console.log('🔍 Result output type:', typeof result.output);
+        console.log('🔍 Result output:', result.output);
         
-        if (result.output && result.output.length > 0) {
-          imageUrl = result.output[0];
-          console.log('📸 Image URL extracted:', imageUrl);
+        // Handle different possible response formats
+        let extractedUrl = null;
+        
+        if (result.output) {
+          if (Array.isArray(result.output) && result.output.length > 0) {
+            extractedUrl = result.output[0];
+            console.log('📸 Image URL extracted from array:', extractedUrl);
+          } else if (typeof result.output === 'string') {
+            extractedUrl = result.output;
+            console.log('📸 Image URL extracted as string:', extractedUrl);
+          } else {
+            console.error('❌ Unexpected output format:', typeof result.output, result.output);
+          }
+        }
+        
+        // Validate URL before using it
+        if (extractedUrl) {
+          try {
+            const urlObj = new URL(extractedUrl);
+            if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+              imageUrl = extractedUrl;
+              console.log('✅ Valid image URL confirmed:', imageUrl);
+            } else {
+              console.error('❌ Invalid URL protocol:', urlObj.protocol);
+              throw new Error(`Invalid URL protocol: ${urlObj.protocol}`);
+            }
+          } catch (urlError) {
+            console.error('❌ Invalid URL format:', extractedUrl, urlError);
+            throw new Error(`Invalid URL format: ${extractedUrl}`);
+          }
         } else {
-          console.error('❌ No output in result:', result);
+          console.error('❌ No valid URL found in result:', result);
           throw new Error('No image URL in response');
         }
         
@@ -1306,8 +1354,23 @@ async function generateImage(imagePrompt) {
        imageUrl = j.url;
      }
     if (imageUrl) {
+      console.log('🖼️ Creating image element with URL:', imageUrl);
+      
+      // Double-check URL validity before using it
+      try {
+        new URL(imageUrl);
+        console.log('✅ URL validation passed for DOM update');
+      } catch (e) {
+        console.error('❌ URL validation failed for DOM update:', imageUrl, e);
+        imageStatus.textContent = "Invalid image URL received.";
+        return null;
+      }
+      
       const img = document.createElement("img");
       img.src = imageUrl;
+      img.onload = () => console.log('✅ Image loaded successfully');
+      img.onerror = (e) => console.error('❌ Image load failed:', e, 'URL:', imageUrl);
+      
       imageContainer.innerHTML = "";
       imageContainer.appendChild(img);
       const a = document.createElement("a");
@@ -1319,6 +1382,7 @@ async function generateImage(imagePrompt) {
       // Update preview if showing image
       updatePreviewMode();
     } else {
+      console.error('❌ No imageUrl to display');
       imageStatus.textContent = "Image generation failed.";
     }
     return imageUrl;

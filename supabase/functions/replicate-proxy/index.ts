@@ -153,6 +153,8 @@ serve(async (req) => {
     }
 
     // Return immediate result if no polling needed
+    console.log('✅ Immediate response (no polling needed)')
+    console.log('📸 Immediate output:', responseData.output)
     return new Response(
       JSON.stringify(responseData), 
       { 
