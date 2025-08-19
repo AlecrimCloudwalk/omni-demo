@@ -5,6 +5,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 function getAllowedOrigin(request: Request): string {
   const origin = request.headers.get('origin') || '';
   
+  // Handle null origin (file:// protocol for local development)  
+  if (!origin || origin === 'null' || origin === '') {
+    return '*'; // Allow file:// protocol for local development
+  }
+  
   // Allow localhost for development
   if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
     return origin;
@@ -15,10 +20,12 @@ function getAllowedOrigin(request: Request): string {
     'https://cloudwalk.github.io',
     'https://zeeyvgspihtrgcdkrsvx.supabase.co',
     'https://omni-demo.onrender.com',
+    'https://design-cw-omni.onrender.com',
     'https://omni-demo.vercel.app'
   ];
   
-  if (allowedDomains.some(domain => origin.startsWith(domain))) {
+  // Check exact matches and subdomain matches
+  if (allowedDomains.some(domain => origin === domain || origin.startsWith(domain))) {
     return origin;
   }
   
@@ -26,11 +33,20 @@ function getAllowedOrigin(request: Request): string {
   return 'null';
 }
 
-const getCorsHeaders = (request: Request) => ({
-  'Access-Control-Allow-Origin': getAllowedOrigin(request),
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Credentials': 'true',
-})
+const getCorsHeaders = (request: Request) => {
+  const allowedOrigin = getAllowedOrigin(request);
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+  
+  // Only add credentials header if origin is not '*'
+  if (allowedOrigin !== '*') {
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+  
+  return headers;
+}
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
