@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Omni-jimmer</title>
+  <link rel="stylesheet" href="./style.css" />
+  <link rel="preconnect" href="https://api.openai.com" crossorigin>
+  <link rel="preconnect" href="https://api.replicate.com" crossorigin>
+  <meta name="description" content="POC: Generate image, audio (pt-BR), and video for Brazilian SMBs using OpenAI and Replicate." />
+  
+  <!-- Supabase Configuration -->
+  <script src="./supabase-config.js"></script>
+  
+  <!-- Security utilities MUST load first -->
+  <script src="./security-utils.js"></script>
+  
+  <!-- Authentication -->
+  <script src="./auth.js"></script>
+</head>
+<body>
+  <!-- Authentication Container -->
+  <div id="authContainer" class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>🎬 Omni-jimmer</h1>
+        <p>Cloudwalk Internal Tool</p>
+      </div>
+      
+      <div class="auth-content">
+        <div class="auth-icon">🔐</div>
+        <h2>Sign in to continue</h2>
+        <p>This tool is restricted to Cloudwalk employees.</p>
+        
+        <button onclick="cloudwalkAuth.signIn()" class="google-signin-btn">
+          <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+            <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+                        Continue with GitHub (@cloudwalk.io)
+        </button>
+        
+        <div class="auth-notice">
+          <p><strong>🏢 Cloudwalk Employees Only</strong></p>
+          <p>You must sign in with your @cloudwalk.io email address.</p>
+          <p>API keys are managed automatically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application (Hidden until authenticated) -->
+  <div id="mainApp" style="display: none;">
+    <header class="header">
+      <div class="header-content">
+        <h1>🎬 Omni-jimmer</h1>
+        <p class="sub">AI-powered Brazilian customer based content generator. Create authentic testimonial images and videos featuring real Brazilian locations, businesses, and personalities with dynamic product messaging.</p>
+      </div>
+      <!-- User info will be dynamically inserted here by auth.js -->
+    </header>
+
+  <!-- GitHub Pages API Key Notice -->
+  <div id="apiKeyNotice" class="api-key-notice" style="display: none;">
+    <div class="notice-content">
+      <h3>🔑 API Keys Required</h3>
+      <p>For GitHub Pages deployment, you need to provide your own API keys:</p>
+      <div class="api-key-inputs">
+        <div class="key-input">
+          <label for="openaiKeyInput">OpenAI API Key:</label>
+          <input type="password" id="openaiKeyInput" placeholder="sk-...">
+          <button onclick="saveOpenAIKey()">Save</button>
+        </div>
+        <div class="key-input">
+          <label for="replicateKeyInput">Replicate API Key:</label>
+          <input type="password" id="replicateKeyInput" placeholder="r8_...">
+          <button onclick="saveReplicateKey()">Save</button>
+        </div>
+      </div>
+              <div class="key-management">
+          <div class="key-code-section">
+            <label for="combinedKeys">Quick Setup: Paste both keys separated by comma (openai,replicate)</label>
+            <div class="key-code-input">
+              <input type="text" id="combinedKeys" placeholder="sk-proj-abc123...,r8_xyz789..." style="flex: 1; font-family: monospace; font-size: 12px;">
+              <button onclick="pasteCombinedKeys()" class="paste-keys-btn">Parse & Save</button>
+            </div>
+            <div class="key-code-actions">
+              <button onclick="copyCombinedKeys()" class="copy-keys-btn">Copy Both Keys</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="notice-actions">
+          <button onclick="clearAllKeys()" class="clear-keys-btn">Clear All Keys</button>
+          <button onclick="hideApiNotice()" class="close-notice">Continue</button>
+        </div>
+    </div>
+  </div>
+
+  <main class="three-column-container">
+    <!-- LEFT COLUMN: Controls -->
+    <section class="left-column">
+      <!-- Controls Section -->
+      <div class="controls-section">
+        <h3>Generation Controls</h3>
+        <div class="generation-options">
+          <label class="option-toggle">
+            <input id="enableImage" type="checkbox" checked>
+            <span class="checkmark"></span>
+            <span class="option-text">Generate Image</span>
+            <span class="option-price">$0.03</span>
+          </label>
+          <label class="option-toggle">
+            <input id="enableSeededit" type="checkbox">
+            <span class="checkmark"></span>
+            <span class="option-text">Remove Text from Image</span>
+            <span class="option-price">$0.03</span>
+          </label>
+          <label class="option-toggle">
+            <input id="useStartFrame" type="checkbox">
+            <span class="checkmark"></span>
+            <span class="option-text">Use Image as Start Frame</span>
+            <span class="option-price">Free</span>
+          </label>
+          <label class="option-toggle">
+            <input id="enableVeo3" type="checkbox" checked>
+            <span class="checkmark"></span>
+            <span class="option-text">Generate Video</span>
+            <span class="option-price">$3.20</span>
+          </label>
+        </div>
+        
+        <div class="pricing-total">
+          <div class="total-display">
+            <span class="total-label">Estimated Total:</span>
+            <span id="totalPrice" class="total-amount">$3.23</span>
+          </div>
+        </div>
+
+                        <div class="product-callout">
+                  <label for="productCallout">Product to call out:</label>
+                  <input type="text" id="productCallout" value="JIM assistente virtual no app" placeholder="Product or service to promote">
+                </div>
+                <div class="action-buttons">
+                  <button id="shuffleBtn" type="button" class="shuffle-btn">🎲 Shuffle</button>
+                  <button id="generateBtn" type="button" class="generate-btn">Generate</button>
+                </div>
+              </div>
+
+      <!-- Customer Profile Section -->
+      <div class="profile-section collapsed">
+        <div class="profile-toggle" onclick="if(window.toggleProfile) window.toggleProfile(); else console.warn('toggleProfile not loaded yet')">
+          <h3>Customer Profile</h3>
+        </div>
+        <div class="profile-content">
+        <div class="form-grid">
+          <label>
+            Business name
+            <input id="businessName" type="text" placeholder="Padaria Pão Quentinho" />
+          </label>
+          <label>
+            Owner name
+            <input id="ownerName" type="text" placeholder="Maria Silva" />
+          </label>
+          <label>
+            CNAE / Segment
+            <select id="cnae"></select>
+          </label>
+          <label>
+            Region
+            <select id="region"></select>
+          </label>
+          <label>
+            City
+            <select id="city"></select>
+          </label>
+          <label>
+            Gender (optional)
+            <select id="gender">
+              <option value="">Auto (by CNAE)</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
+          </label>
+          <label>
+            Monthly TPV (R$)
+            <input id="tpv" type="number" min="0" step="100" placeholder="45000" />
+          </label>
+          <label>
+            Average Ticket (R$)
+            <input id="avgTicket" type="number" min="0" step="5" placeholder="38" />
+          </label>
+          <label>
+            Monthly Sales Count
+            <input id="salesCount" type="number" min="0" step="10" placeholder="1200" />
+          </label>
+          <label>
+            Online Share (%)
+            <input id="onlineShare" type="number" min="0" max="100" step="1" placeholder="20" />
+          </label>
+          <label>
+            Storefront style
+            <select id="storefront">
+              <option value="street">Street</option>
+              <option value="market">Market</option>
+              <option value="mall">Mall</option>
+              <option value="home">Home</option>
+            </select>
+          </label>
+          <label>
+            Signature product/service
+            <input id="signatureItem" type="text" placeholder="Pão francês artesanal" />
+          </label>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER COLUMN: Generated Content -->
+    <section class="center-column">
+      <div class="generated-texts">
+        <h3>Generated Texts</h3>
+        <div class="text-results">
+          <div class="overlay-text-result">
+            <label>Overlay Text:</label>
+            <div id="overlayTextDisplay">—</div>
+          </div>
+          <div class="button-text-result">
+            <label>Button Text:</label>
+            <div id="buttonTextDisplay">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <h3>Generated Image</h3>
+        <div id="imageStatus" class="status">Waiting…</div>
+        <div id="imagePrompt" class="prompt-display"></div>
+        <div id="imageContainer" class="media"></div>
+      </div>
+      <div class="step">
+        <h3>Text Removed Image</h3>
+        <div id="seededitStatus" class="status">Waiting…</div>
+        <div id="seededitContainer" class="media"></div>
+      </div>
+      <div class="step">
+        <h3>Generated Video</h3>
+        <div id="veo3Status" class="status">Waiting…</div>
+        <div id="veo3Prompt" class="prompt-display"></div>
+        <div id="veo3Container" class="media"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: App Preview -->
+    <section class="right-column">
+      <div class="app-preview">
+        <h3>App Preview</h3>
+                        <div class="preview-controls">
+                  <label class="preview-switch">
+                    <input type="radio" name="previewMode" value="image" id="previewImage" checked>
+                    <span>Original Image</span>
+                  </label>
+                  <label class="preview-switch">
+                    <input type="radio" name="previewMode" value="edited" id="previewEdited">
+                    <span>Edited Image</span>
+                  </label>
+                  <label class="preview-switch">
+                    <input type="radio" name="previewMode" value="video" id="previewVideo">
+                    <span>Show Video</span>
+                  </label>
+                  <label class="audio-toggle">
+                    <input type="checkbox" id="videoAudioToggle">
+                    <span>🔊 Video Audio</span>
+                  </label>
+                </div>
+        <div class="phone-mockup">
+          <!-- Background Video -->
+          <video class="phone-mockup-video" id="phoneBgVideo" autoplay muted loop playsinline>
+            <source src="./app-bg-video.mp4" type="video/mp4">
+          </video>
+          
+          <!-- Video Component Overlay -->
+          <div class="video-overlay" id="videoOverlay">
+            <div class="video-component">
+              <div class="video-placeholder">
+                <span>Generated video will appear here</span>
+              </div>
+              <div class="video-controls">
+                <div class="gradient-overlay"></div>
+                <div class="content-overlay">
+                  <div class="text-overlay">
+                    <p>Tap to Pay<br>no iPhone</p>
+                  </div>
+                  <button class="cta-button">Começar a usar</button>
+                </div>
+                <div class="carousel-indicators">
+                  <div class="indicator active"></div>
+                  <div class="indicator"></div>
+                  <div class="indicator"></div>
+                  <div class="indicator"></div>
+                  <div class="indicator"></div>
+                  <div class="indicator"></div>
+                  <div class="indicator"></div>
+                  <div class="indicator"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          
+          <!-- iPhone Frame Overlay -->
+          <div class="iphone-frame"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>Models: Seedream-3 (image), Veo3-Fast (video). Content: pt-BR. UI: English.</small>
+  </footer>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
+
+
