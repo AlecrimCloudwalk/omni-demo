@@ -109,10 +109,8 @@ class CloudwalkAuth {
     this.isAuthenticated = true;
     this.updateAuthUI();
     
-    // Hide API key notice since user is now authenticated with server-side keys
-    if (typeof checkApiKeysAndHideNotice === 'function') {
-      checkApiKeysAndHideNotice();
-    }
+    // API key management removed - server-side keys only
+    console.log('🔑 User authenticated - API keys managed server-side');
     
     // Get access token for API calls
     this.refreshAccessToken();
@@ -124,10 +122,8 @@ class CloudwalkAuth {
     this.isAuthenticated = false;
     this.updateAuthUI();
     
-    // Show API notice again since user is no longer authenticated with server-side keys
-    if (typeof showApiNoticeIfNeeded === 'function') {
-      showApiNoticeIfNeeded();
-    }
+    // API key management removed - authentication required for access
+    console.log('👋 User signed out - authentication required for API access');
   }
 
   // SECURITY FIX: Secure email input dialog to replace prompt()
@@ -398,7 +394,6 @@ class CloudwalkAuth {
   updateAuthUI() {
     const authContainer = document.getElementById('authContainer');
     const mainApp = document.getElementById('mainApp');
-    const apiKeyNotice = document.getElementById('apiKeyNotice');
     
     if (!authContainer || !mainApp) return;
     
@@ -406,9 +401,6 @@ class CloudwalkAuth {
       // Show main app, hide auth
       authContainer.style.display = 'none';
       mainApp.style.display = 'block';
-      
-      // Hide API key notice (not needed for authenticated users)
-      if (apiKeyNotice) apiKeyNotice.style.display = 'none';
       
       // Update user info in header
       this.updateUserInfo();

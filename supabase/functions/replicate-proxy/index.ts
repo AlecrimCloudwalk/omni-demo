@@ -1,12 +1,40 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Get allowed origins based on environment
+function getAllowedOrigin(request: Request): string {
+  const origin = request.headers.get('origin') || '';
+  
+  // Allow localhost for development
+  if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    return origin;
+  }
+  
+  // Allow your production domains
+  const allowedDomains = [
+    'https://cloudwalk.github.io',
+    'https://zeeyvgspihtrgcdkrsvx.supabase.co',
+    'https://omni-demo.onrender.com',
+    'https://omni-demo.vercel.app'
+  ];
+  
+  if (allowedDomains.some(domain => origin.startsWith(domain))) {
+    return origin;
+  }
+  
+  // Fallback - reject unknown origins
+  return 'null';
 }
 
+const getCorsHeaders = (request: Request) => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(request),
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
+})
+
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

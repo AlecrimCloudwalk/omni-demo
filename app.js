@@ -14,197 +14,9 @@ const API_BASE = IS_LOCAL ? 'http://localhost:8787' : '/api';
 // For GitHub Pages, we'll use direct API calls
 const GITHUB_PAGES_MODE = IS_GITHUB_PAGES || (!IS_LOCAL && !IS_VERCEL);
 
-// API Key Management Functions - Make them globally accessible
-window.saveOpenAIKey = function() {
-  console.log('saveOpenAIKey called'); // Debug
-  try {
-    const input = document.getElementById('openaiKeyInput');
-    console.log('Input element:', input); // Debug
-    const key = input ? input.value.trim() : '';
-    console.log('Key length:', key.length); // Debug
-    if (key) {
-      SecurityUtils.secureStore('openai_api_key', key);
-      alert('OpenAI API key saved!');
-      input.value = '';
-      checkApiKeysAndHideNotice();
-    } else {
-      alert('Please enter a valid OpenAI API key');
-    }
-  } catch (e) {
-    console.error('Error in saveOpenAIKey:', e);
-    alert('Error saving API key: ' + e.message);
-  }
-}
+// API key management removed - authentication required
 
-window.saveReplicateKey = function() {
-  console.log('saveReplicateKey called'); // Debug
-  try {
-    const input = document.getElementById('replicateKeyInput');
-    console.log('Input element:', input); // Debug
-    const key = input ? input.value.trim() : '';
-    console.log('Key length:', key.length); // Debug
-    if (key) {
-      SecurityUtils.secureStore('replicate_api_key', key);
-      alert('Replicate API key saved!');
-      input.value = '';
-      checkApiKeysAndHideNotice();
-    } else {
-      alert('Please enter a valid Replicate API key');
-    }
-  } catch (e) {
-    console.error('Error in saveReplicateKey:', e);
-    alert('Error saving API key: ' + e.message);
-  }
-}
-
-window.hideApiNotice = function() {
-  console.log('hideApiNotice called'); // Debug
-  try {
-    const notice = document.getElementById('apiKeyNotice');
-    if (notice) {
-      notice.style.display = 'none';
-    }
-  } catch (e) {
-    console.error('Error in hideApiNotice:', e);
-  }
-}
-
-window.pasteCombinedKeys = function() {
-  const combinedInput = document.getElementById('combinedKeys');
-  const combined = combinedInput.value.trim();
-  
-  if (!combined) {
-    alert('❌ Please paste the combined keys (openai_key,replicate_key)');
-    return;
-  }
-  
-  const keys = combined.split(',').map(k => k.trim());
-  if (keys.length !== 2) {
-    alert('❌ Please use format: openai_key,replicate_key\n\nExample:\nsk-proj-abc123...,r8_xyz789...');
-    return;
-  }
-  
-  const [openaiKey, replicateKey] = keys;
-  
-  // Enhanced validation with better error messages
-  if (!openaiKey.startsWith('sk-')) {
-    alert('❌ OpenAI key format error!\n\n✅ Should start with "sk-" (usually "sk-proj-...")\n❌ Your key starts with: "' + openaiKey.substring(0, 10) + '..."');
-    return;
-  }
-  
-  if (!replicateKey.startsWith('r8_')) {
-    alert('❌ Replicate key format error!\n\n✅ Should start with "r8_"\n❌ Your key starts with: "' + replicateKey.substring(0, 10) + '..."');
-    return;
-  }
-  
-  // Additional length validation
-  if (openaiKey.length < 50) {
-    alert('❌ OpenAI key seems too short!\n\n✅ Should be 50+ characters\n❌ Your key is only ' + openaiKey.length + ' characters');
-    return;
-  }
-  
-  if (replicateKey.length < 40) {
-    alert('❌ Replicate key seems too short!\n\n✅ Should be 40+ characters\n❌ Your key is only ' + replicateKey.length + ' characters');
-    return;
-  }
-  
-  SecurityUtils.secureStore('openai_api_key', openaiKey);
-  SecurityUtils.secureStore('replicate_api_key', replicateKey);
-  
-  // Update the individual input fields
-  document.getElementById('openaiKeyInput').value = openaiKey;
-  document.getElementById('replicateKeyInput').value = replicateKey;
-  
-  combinedInput.value = '';
-  alert('✅ Both keys saved successfully!\n\n🎯 Ready to generate!\n\n📋 Debug: F12 → Console to see detailed logs');
-  checkApiKeysAndHideNotice();
-}
-
-window.copyCombinedKeys = function() {
-  const openaiKey = SecurityUtils.secureRetrieve('openai_api_key') || '';
-  const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key') || '';
-  
-  if (!openaiKey || !replicateKey) {
-    alert('Both keys must be saved first');
-    return;
-  }
-  
-  const combined = `${openaiKey},${replicateKey}`;
-  
-  navigator.clipboard.writeText(combined).then(() => {
-    alert('Combined keys copied to clipboard!');
-  }).catch(() => {
-    // Fallback for older browsers
-    const textarea = document.createElement('textarea');
-    textarea.value = combined;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    alert('Combined keys copied to clipboard!');
-  });
-}
-
-window.clearAllKeys = function() {
-  console.log('clearAllKeys called'); // Debug
-  try {
-    SecurityUtils.secureClear('openai_api_key');
-    SecurityUtils.secureClear('replicate_api_key');
-    
-    // Clear the input fields
-    const openaiInput = document.getElementById('openaiKeyInput');
-    const replicateInput = document.getElementById('replicateKeyInput');
-    if (openaiInput) openaiInput.value = '';
-    if (replicateInput) replicateInput.value = '';
-    
-    alert('All API keys cleared! You can now enter new keys.');
-    
-    // Show the notice again if it was hidden
-    showApiNoticeIfNeeded();
-  } catch (e) {
-    console.error('Error in clearAllKeys:', e);
-    alert('Error clearing keys: ' + e.message);
-  }
-}
-
-function checkApiKeysAndHideNotice() {
-  // Hide notice if user is authenticated with Supabase (server-side keys)
-  if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken) {
-    console.log('🔐 Supabase authenticated - hiding API notice');
-    hideApiNotice();
-    return;
-  }
-  
-  // Or if they have client-side keys
-  const hasOpenAI = SecurityUtils.secureRetrieve('openai_api_key');
-  const hasReplicate = SecurityUtils.secureRetrieve('replicate_api_key');
-  if (hasOpenAI && hasReplicate) {
-    console.log('🔑 Client-side keys found - hiding API notice');
-    hideApiNotice();
-  }
-}
-
-function showApiNoticeIfNeeded() {
-  if (GITHUB_PAGES_MODE) {
-    // Check if user is authenticated with Supabase (server-side keys available)
-    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken) {
-      console.log('🔐 User authenticated with Supabase - hiding API key notice (server-side keys available)');
-      hideApiNotice();
-      return;
-    }
-    
-    // Only show notice if not authenticated AND no client-side keys
-    const hasOpenAI = SecurityUtils.secureRetrieve('openai_api_key');
-    const hasReplicate = SecurityUtils.secureRetrieve('replicate_api_key');
-    if (!hasOpenAI || !hasReplicate) {
-      console.log('⚠️ No Supabase auth AND missing client-side keys - showing API notice');
-      document.getElementById('apiKeyNotice').style.display = 'block';
-      // Pre-fill keys if they exist
-      if (hasOpenAI) document.getElementById('openaiKeyInput').value = '••••••••';
-      if (hasReplicate) document.getElementById('replicateKeyInput').value = '••••••••';
-    }
-  }
-}
+// Client-side API key management removed - authentication required
 
 const CNAE_OPTIONS = [
   "1623-9/01 - Marcenaria",
@@ -694,7 +506,7 @@ function animateCarousel() {
 // Iniciar animação quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(animateCarousel, 1000); // Inicia após 1 segundo
-  showApiNoticeIfNeeded(); // Show API key notice if on GitHub Pages
+  // Authentication now required - no client-side API key fallback
 });
 
 async function onShuffle() {
@@ -772,32 +584,13 @@ async function onGenerate() {
     return;
   }
 
-  // Pre-flight checks for GitHub Pages mode
-  if (GITHUB_PAGES_MODE) {
-    console.log('🔍 Pre-flight Check:');
-    console.log('• User:', window.cloudwalkAuth?.user?.email || 'Not authenticated');
-    console.log('• Mode: GitHub Pages');
-    
-    // Check if user is authenticated with Supabase (preferred method)
-    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken) {
-      console.log('🔑 Using Supabase authenticated session - server-side API keys');
-      // Will use Supabase Edge Functions with server-side keys
-    } else {
-      // Fallback to client-side API keys with security warning
-      console.warn('⚠️ SECURITY WARNING: Using client-side API keys as fallback');
-      
-      const openaiKey = SecurityUtils.secureRetrieve('openai_api_key');
-      const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
-      
-      if (!openaiKey || !replicateKey) {
-        alert('❌ Missing API Keys!\n\n🔐 Please sign in with your Cloudwalk account for secure server-side API handling,\n\nOR provide client-side keys as fallback:\n• OpenAI: https://platform.openai.com/api-keys\n• Replicate: https://replicate.com/account/api-tokens\n\n⚠️ Client-side keys are less secure');
-        showApiNoticeIfNeeded();
-        return;
-      }
-    }
-  } else {
-    console.log('🔍 Mode: Serverless (Vercel/Local)');
+  // Require authentication - no client-side fallback
+  if (!window.cloudwalkAuth?.isAuthenticated || !window.cloudwalkAuth?.user?.accessToken) {
+    alert('🔐 Authentication Required\n\nPlease sign in with your @cloudwalk.io account to access the application.\n\nAPI keys are managed securely on the server.');
+    return;
   }
+  
+  console.log('🔑 Using authenticated session with server-side API keys');
 
   // Generate MASTER SEED for this generation cycle
   const masterSeed = generateBetterRandomSeed();
@@ -1212,70 +1005,6 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         throw error;
       }
       
-    } else if (GITHUB_PAGES_MODE) {
-      // Fallback to direct OpenAI API call with client-side keys
-      console.warn('⚠️ Falling back to direct OpenAI API call (client-side keys)');
-      const openaiKey = SecurityUtils.secureRetrieve('openai_api_key');
-      if (!openaiKey) {
-        showApiNoticeIfNeeded();
-        throw new Error('Please provide your OpenAI API key using the key input above');
-      }
-      
-      try {
-        
-        const r = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openaiKey}`,
-            'Content-Type': 'application/json'
-          },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a JSON generator. Always respond with valid JSON only, no explanations or extra text.'
-            },
-            {
-              role: 'user', 
-              content: user.rules.join('\n') + '\n\nRETURNE APENAS JSON VÁLIDO:'
-            }
-          ],
-          temperature: 0.7,
-          response_format: { type: "json_object" }
-          })
-        });
-        if (!r.ok) {
-          const errorText = await r.text();
-          console.error('❌ OpenAI API Error Details:', {
-            status: r.status,
-            statusText: r.statusText,
-            error: errorText
-          });
-          
-          if (r.status === 401) {
-            throw new Error('❌ OpenAI API Key Invalid!\n\n🔍 Possible issues:\n• Wrong API key format\n• Expired or revoked key\n• Key without GPT-4 access\n\n💡 Get new key: https://platform.openai.com/api-keys');
-          } else if (r.status === 429) {
-            throw new Error('❌ OpenAI Rate Limit!\n\n🔍 Possible issues:\n• Too many requests\n• Insufficient credits\n• Free tier limitations\n\n💡 Check usage: https://platform.openai.com/usage');
-          } else {
-            throw new Error(`❌ OpenAI API Error (${r.status}): ${errorText}\n\n💡 Check your account: https://platform.openai.com/`);
-          }
-        }
-        const openaiResponse = await r.json();
-        try {
-          const content = openaiResponse.choices[0].message.content;
-          console.log('OpenAI raw response:', content); // Debug
-          json = JSON.parse(content);
-          console.log('🔍 Full OpenAI parsed response (fallback):', JSON.stringify(json, null, 2));
-        } catch (e) {
-          console.error('JSON parse error:', e);
-          console.error('OpenAI response was:', openaiResponse.choices[0].message.content);
-          throw new Error(`Failed to parse OpenAI response as JSON: ${e.message}`);
-        }
-      } catch (error) {
-        console.error('GitHub Pages API call error:', error);
-        throw error;
-      }
     } else {
       // Use serverless function (Vercel/local)
       const endpoint = `${API_BASE}/gpt/prompts`;
@@ -1497,99 +1226,7 @@ async function generateImage(imagePrompt) {
         throw error;
       }
       
-    } else if (GITHUB_PAGES_MODE) {
-      // Fallback to direct Replicate API call with client-side keys
-      console.warn('⚠️ Falling back to direct Replicate API call (client-side keys)');
-      const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
-      if (!replicateKey) {
-        showApiNoticeIfNeeded();
-        throw new Error('Please provide your Replicate API key using the key input above');
-      }
-       
-       // Use corsproxy.io which supports Authorization headers
-       const corsProxy = 'https://corsproxy.io/?';
-       const replicateUrl = 'https://api.replicate.com/v1/models/bytedance/seedream-3/predictions';
-       
-       console.log('Making Replicate Image API call:', corsProxy + replicateUrl);
-       console.log('Image request body:', JSON.stringify(body, null, 2));
-       
-       const r = await fetch(corsProxy + replicateUrl, {
-         method: 'POST',
-         headers: {
-           'Authorization': `Bearer ${replicateKey}`,
-           'Content-Type': 'application/json'
-         },
-         body: JSON.stringify(body)
-       });
-       
-       console.log('Replicate image response status:', r.status);
-       if (!r.ok) {
-         const errorText = await r.text();
-         console.error('❌ Replicate Image API Error Details:', {
-           status: r.status,
-           statusText: r.statusText,
-           error: errorText,
-           corsProxy: corsProxy,
-           apiUrl: replicateUrl
-         });
-         
-         if (r.status === 401) {
-           throw new Error('❌ Replicate API Key Invalid!\n\n🔍 Possible issues:\n• Wrong API key format\n• Expired or revoked key\n• Key without model access\n\n💡 Get new key: https://replicate.com/account/api-tokens');
-         } else if (r.status === 429) {
-           throw new Error('❌ Replicate Rate Limit!\n\n🔍 Possible issues:\n• Too many requests\n• Insufficient credits\n• Daily spending limit reached\n\n💡 Check billing: https://replicate.com/account/billing');
-         } else if (r.status === 400) {
-           throw new Error('❌ Replicate Bad Request!\n\n🔍 Possible issues:\n• Invalid prompt format\n• Unsupported parameters\n• Model restrictions\n\n💡 Error: ' + errorText);
-         } else {
-           throw new Error(`❌ Replicate API Error (${r.status}): ${errorText}\n\n🌐 Network issue? Try:\n• Different browser\n• Disable ad-blocker\n• Check corsproxy.io status`);
-         }
-       }
-       
-       const prediction = await r.json();
-       console.log('Replicate image prediction:', prediction);
-       
-       // Poll for completion
-       let result = prediction;
-       let pollAttempts = 0;
-       const maxPollAttempts = 30; // 60 seconds max
-       
-       while ((result.status === 'starting' || result.status === 'processing') && pollAttempts < maxPollAttempts) {
-         pollAttempts++;
-         console.log(`Polling attempt ${pollAttempts}, status: ${result.status}`);
-         await new Promise(resolve => setTimeout(resolve, 2000));
-         
-         if (!result.urls || !result.urls.get) {
-           console.error('No polling URL available:', result);
-           throw new Error('No polling URL available from Replicate');
-         }
-         
-         const pollUrl = corsProxy + result.urls.get;
-         console.log('Polling URL:', pollUrl);
-         
-         const pollR = await fetch(pollUrl, {
-           headers: { 'Authorization': `Bearer ${replicateKey}` }
-         });
-         
-         if (!pollR.ok) {
-           console.error('Polling failed:', await pollR.text());
-           throw new Error(`Polling failed: ${pollR.status}`);
-         }
-         
-         result = await pollR.json();
-         console.log('Poll result:', result);
-       }
-       
-       if (result.status === 'succeeded') {
-         imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
-         console.log('Image generation succeeded:', imageUrl);
-       } else if (result.status === 'failed') {
-         console.error('Image generation failed:', result.error || result);
-         throw new Error(`Image generation failed: ${result.error || 'Unknown error'}`);
-       } else if (pollAttempts >= maxPollAttempts) {
-         throw new Error('Image generation timed out');
-       } else {
-         throw new Error(`Unexpected status: ${result.status}`);
-       }
-     } else {
+    } else {
        // Use serverless function (Vercel/local)
        const endpoint = `${API_BASE}/replicate/image`;
        const r = await fetch(endpoint, {
@@ -1744,76 +1381,6 @@ async function generateSeededit(imageUrl) {
         throw error;
       }
       
-    } else if (GITHUB_PAGES_MODE) {
-      // Fallback to direct Replicate API call with client-side keys
-      console.warn('⚠️ Falling back to direct Replicate Seededit API call (client-side keys)');
-      const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
-      if (!replicateKey) {
-        showApiNoticeIfNeeded();
-        return null;
-      }
-      
-      // Use corsproxy.io which supports Authorization headers
-      const corsProxy = 'https://corsproxy.io/?';
-      const replicateUrl = 'https://api.replicate.com/v1/models/bytedance/seededit-3.0/predictions';
-      
-      const seededitSeed = generateSeedVariation(window.currentMasterSeed || generateBetterRandomSeed(), 2);
-      console.log(`🔧 Seededit Seed: ${seededitSeed} (Master: ${window.currentMasterSeed})`);
-      
-      const body = {
-        input: {
-          image: imageUrl,
-          prompt: "remove text from image, remove name of the shop, remove letterings, remove subtitle, remove storefront name, remove text, remove all written, remove every text",
-          guidance_scale: 5.5,
-          seed: seededitSeed
-        }
-      };
-      
-      console.log('Making Replicate Seededit API call:', corsProxy + replicateUrl);
-      console.log('Seededit request body:', JSON.stringify(body, null, 2));
-      
-      const r = await fetch(corsProxy + replicateUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${replicateKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-      
-      if (!r.ok) {
-        const errorText = await r.text();
-        throw new Error(`HTTP ${r.status}: ${errorText}`);
-      }
-      
-      const prediction = await r.json();
-      console.log('Seededit prediction:', prediction);
-      
-      // Poll for completion
-      let result = prediction;
-      for (let i = 0; i < 120; i++) {
-        console.log(`Polling attempt ${i + 1}, status: ${result.status}`);
-        
-        if (result.status === 'succeeded') {
-          editedImageUrl = result.output;
-          break;
-        } else if (result.status === 'failed' || result.status === 'canceled') {
-          throw new Error('Seededit generation failed');
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const pollR = await fetch(corsProxy + result.urls.get, {
-          headers: { 'Authorization': `Token ${replicateKey}` }
-        });
-        result = await pollR.json();
-      }
-      
-      if (result.status === 'succeeded') {
-        editedImageUrl = result.output;
-      } else {
-        throw new Error('Seededit generation failed');
-      }
     } else {
       // Use serverless function (Vercel/local)
       const endpoint = `${API_BASE}/replicate/seededit`;
@@ -1979,68 +1546,7 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
         throw error;
       }
       
-    } else if (GITHUB_PAGES_MODE) {
-      // Fallback to direct Replicate API call with client-side keys
-      console.warn('⚠️ Falling back to direct Replicate Video API call (client-side keys)');
-      const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
-      if (!replicateKey) {
-        showApiNoticeIfNeeded();
-        throw new Error('Please provide your Replicate API key using the key input above');
-      }
-       
-       // Use corsproxy.io which supports Authorization headers
-       const corsProxy = 'https://corsproxy.io/?';
-       const replicateUrl = 'https://api.replicate.com/v1/models/google/veo-3-fast/predictions';
-       
-       const videoSeed = generateSeedVariation(window.currentMasterSeed || generateBetterRandomSeed(), 3);
-       console.log(`🎬 Video Seed: ${videoSeed} (Master: ${window.currentMasterSeed})`);
-       
-       const body = {
-         input: {
-           prompt: videoPrompt,
-           aspect_ratio: "16:9",
-           duration: 5,
-           seed: videoSeed
-         }
-       };
-       
-       // Add start frame image if provided
-       if (startFrameUrl) {
-         body.input.image = startFrameUrl;
-         console.log('🖼️ Using start frame:', startFrameUrl);
-       }
-       
-       console.log('Making Replicate Video API call:', corsProxy + replicateUrl);
-       console.log('Video request body:', JSON.stringify(body, null, 2));
-       
-       const r = await fetch(corsProxy + replicateUrl, {
-         method: 'POST',
-         headers: {
-           'Authorization': `Bearer ${replicateKey}`,
-           'Content-Type': 'application/json'
-         },
-         body: JSON.stringify(body)
-       });
-       if (!r.ok) throw new Error(await r.text());
-       const prediction = await r.json();
-       
-       // Poll for completion
-       let result = prediction;
-       while (result.status === 'starting' || result.status === 'processing') {
-         await new Promise(resolve => setTimeout(resolve, 5000)); // Longer wait for video
-         const pollUrl = corsProxy + result.urls.get;
-         const pollR = await fetch(pollUrl, {
-           headers: { 'Authorization': `Bearer ${replicateKey}` }
-         });
-         result = await pollR.json();
-       }
-       
-       if (result.status === 'succeeded') {
-         videoUrl = result.output;
-       } else {
-         throw new Error('Video generation failed');
-       }
-     } else {
+    } else {
        // Use serverless function (Vercel/local)
        const endpoint = `${API_BASE}/replicate/veo3`;
        const requestBody = { prompt: videoPrompt };

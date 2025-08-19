@@ -75,15 +75,31 @@ class SecurityUtils {
   }
 
   /**
-   * Safely store sensitive data (with basic obfuscation)
+   * Safely store sensitive data (with enhanced obfuscation)
    * @param {string} key 
    * @param {string} value 
    */
   static secureStore(key, value) {
     try {
-      // Basic obfuscation - not real encryption but better than plain text
-      const obfuscated = btoa(value + '_' + Date.now());
-      sessionStorage.setItem(key, obfuscated);
+      // Enhanced obfuscation - multiple layers
+      const timestamp = Date.now();
+      const random = this.generateSecureToken(8);
+      const xorKey = timestamp.toString().padStart(16, '0');
+      
+      // Simple XOR obfuscation
+      let obfuscated = '';
+      for (let i = 0; i < value.length; i++) {
+        const charCode = value.charCodeAt(i) ^ xorKey.charCodeAt(i % xorKey.length);
+        obfuscated += String.fromCharCode(charCode);
+      }
+      
+      const encoded = btoa(JSON.stringify({
+        data: btoa(obfuscated),
+        salt: random,
+        timestamp: timestamp
+      }));
+      
+      sessionStorage.setItem(key, encoded);
     } catch (e) {
       console.error('Failed to store data:', e);
     }
@@ -96,11 +112,27 @@ class SecurityUtils {
    */
   static secureRetrieve(key) {
     try {
-      const obfuscated = sessionStorage.getItem(key);
-      if (!obfuscated) return null;
+      const encoded = sessionStorage.getItem(key);
+      if (!encoded) return null;
       
-      const decoded = atob(obfuscated);
-      const [value] = decoded.split('_');
+      const decoded = JSON.parse(atob(encoded));
+      if (!decoded.data || !decoded.timestamp) {
+        // Try old format for backward compatibility
+        const oldDecoded = atob(encoded);
+        const [value] = oldDecoded.split('_');
+        return value;
+      }
+      
+      const xorKey = decoded.timestamp.toString().padStart(16, '0');
+      const obfuscated = atob(decoded.data);
+      
+      // Reverse XOR obfuscation
+      let value = '';
+      for (let i = 0; i < obfuscated.length; i++) {
+        const charCode = obfuscated.charCodeAt(i) ^ xorKey.charCodeAt(i % xorKey.length);
+        value += String.fromCharCode(charCode);
+      }
+      
       return value;
     } catch (e) {
       console.error('Failed to retrieve data:', e);
