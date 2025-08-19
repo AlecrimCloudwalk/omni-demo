@@ -1,4 +1,9 @@
+// @ts-ignore: Deno global available in Supabase Edge Functions
+declare const Deno: any;
+
+// @ts-ignore: Deno supports URL imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// @ts-ignore: Deno supports URL imports  
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // Get allowed origins based on environment
