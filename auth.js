@@ -109,6 +109,11 @@ class CloudwalkAuth {
     this.isAuthenticated = true;
     this.updateAuthUI();
     
+    // Hide API key notice since user is now authenticated with server-side keys
+    if (typeof checkApiKeysAndHideNotice === 'function') {
+      checkApiKeysAndHideNotice();
+    }
+    
     // Get access token for API calls
     this.refreshAccessToken();
   }
@@ -118,6 +123,11 @@ class CloudwalkAuth {
     this.user = null;
     this.isAuthenticated = false;
     this.updateAuthUI();
+    
+    // Show API notice again since user is no longer authenticated with server-side keys
+    if (typeof showApiNoticeIfNeeded === 'function') {
+      showApiNoticeIfNeeded();
+    }
   }
 
   // SECURITY FIX: Secure email input dialog to replace prompt()

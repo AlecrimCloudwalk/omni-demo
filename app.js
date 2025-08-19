@@ -168,18 +168,36 @@ window.clearAllKeys = function() {
 }
 
 function checkApiKeysAndHideNotice() {
+  // Hide notice if user is authenticated with Supabase (server-side keys)
+  if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken) {
+    console.log('🔐 Supabase authenticated - hiding API notice');
+    hideApiNotice();
+    return;
+  }
+  
+  // Or if they have client-side keys
   const hasOpenAI = SecurityUtils.secureRetrieve('openai_api_key');
   const hasReplicate = SecurityUtils.secureRetrieve('replicate_api_key');
   if (hasOpenAI && hasReplicate) {
+    console.log('🔑 Client-side keys found - hiding API notice');
     hideApiNotice();
   }
 }
 
 function showApiNoticeIfNeeded() {
   if (GITHUB_PAGES_MODE) {
+    // Check if user is authenticated with Supabase (server-side keys available)
+    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken) {
+      console.log('🔐 User authenticated with Supabase - hiding API key notice (server-side keys available)');
+      hideApiNotice();
+      return;
+    }
+    
+    // Only show notice if not authenticated AND no client-side keys
     const hasOpenAI = SecurityUtils.secureRetrieve('openai_api_key');
     const hasReplicate = SecurityUtils.secureRetrieve('replicate_api_key');
     if (!hasOpenAI || !hasReplicate) {
+      console.log('⚠️ No Supabase auth AND missing client-side keys - showing API notice');
       document.getElementById('apiKeyNotice').style.display = 'block';
       // Pre-fill keys if they exist
       if (hasOpenAI) document.getElementById('openaiKeyInput').value = '••••••••';
