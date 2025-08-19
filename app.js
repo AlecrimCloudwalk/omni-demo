@@ -379,11 +379,18 @@ function init() {
   // Pricing calculation event listeners
   if (enableImageEl) enableImageEl.addEventListener('change', updatePricing);
   if (enableSeededitEl) enableSeededitEl.addEventListener('change', updatePricing);
-  if (enableVeo3El) enableVeo3El.addEventListener('change', updatePricing);
-  if (useStartFrameEl) useStartFrameEl.addEventListener('change', updatePricing);
+  if (enableVeo3El) enableVeo3El.addEventListener('change', () => {
+    updatePricing();
+    updateStartFrameVisualFeedback();
+  });
+  if (useStartFrameEl) useStartFrameEl.addEventListener('change', () => {
+    updatePricing();
+    updateStartFrameVisualFeedback();
+  });
 
-  // Initialize pricing
+  // Initialize pricing and start frame feedback
   updatePricing();
+  updateStartFrameVisualFeedback();
 
   // No API card hiding needed since it's removed from HTML
 }
@@ -602,6 +609,47 @@ function updateVideoAudio() {
   }
 }
 
+function updateStartFrameVisualFeedback() {
+  const useStartFrameLabel = useStartFrameEl?.closest('.option-toggle');
+  if (!useStartFrameLabel) return;
+  
+  const hasImage = imageContainer.querySelector('img') !== null;
+  const hasEditedImage = seededitContainer?.querySelector('img') !== null;
+  const isVideoEnabled = enableVeo3El.checked;
+  const isStartFrameChecked = useStartFrameEl.checked;
+  
+  // Enable/disable checkbox based on availability
+  useStartFrameEl.disabled = !hasImage || !isVideoEnabled;
+  
+  // Add visual feedback classes
+  useStartFrameLabel.classList.toggle('has-start-frame', hasImage && isVideoEnabled);
+  useStartFrameLabel.classList.toggle('start-frame-active', isStartFrameChecked && hasImage && isVideoEnabled);
+  
+  // Update option text to show what will be used
+  const optionText = useStartFrameLabel.querySelector('.option-text');
+  if (optionText) {
+    if (!hasImage) {
+      optionText.textContent = 'Use Image as Start Frame (No image available)';
+    } else if (!isVideoEnabled) {
+      optionText.textContent = 'Use Image as Start Frame (Video disabled)';
+    } else if (hasEditedImage && isStartFrameChecked) {
+      optionText.textContent = 'Use Edited Image as Start Frame';
+    } else if (hasImage && isStartFrameChecked) {
+      optionText.textContent = 'Use Original Image as Start Frame';
+    } else {
+      optionText.textContent = 'Use Image as Start Frame';
+    }
+  }
+  
+  console.log('🎯 Start frame status:', {
+    hasImage,
+    hasEditedImage,
+    isVideoEnabled,
+    isStartFrameChecked,
+    isDisabled: useStartFrameEl.disabled
+  });
+}
+
 // Simular animação do carrossel
 function animateCarousel() {
   const indicators = document.querySelectorAll('.indicator');
@@ -785,33 +833,40 @@ async function onGenerate() {
     
     // Use start frame: prefer edited image, fallback to original image
     let startFrameUrl = null;
-    console.log('🔍 Start frame checkbox element found:', !!useStartFrameEl);
-    console.log('🔍 Start frame checkbox state:', useStartFrameEl?.checked);
-    console.log('🔍 Available URLs for start frame:');
-    console.log('  - imageUrl:', imageUrl || 'null');
-    console.log('  - editedImageUrl:', editedImageUrl || 'null');
     
-    if (useStartFrameEl.checked) {
-      const candidateUrl = editedImageUrl || imageUrl;
-      console.log('🔍 Chosen candidate URL:', candidateUrl ? candidateUrl.substring(0, 50) + '...' : 'null');
-      console.log('🔍 Choice logic: editedImageUrl || imageUrl →', editedImageUrl ? 'editedImageUrl' : 'imageUrl');
+    try {
+      console.log('🔍 Start frame checkbox element found:', !!useStartFrameEl);
+      console.log('🔍 Start frame checkbox state:', useStartFrameEl?.checked);
+      console.log('🔍 Available URLs for start frame:');
+      console.log('  - imageUrl:', imageUrl || 'null');
+      console.log('  - editedImageUrl:', editedImageUrl || 'null');
       
-      // Validate start frame URL before using it
-      if (candidateUrl) {
-        try {
-          new URL(candidateUrl);
-          startFrameUrl = candidateUrl;
-          console.log('✅ Valid start frame URL confirmed:', startFrameUrl.substring(0, 50) + '...');
-        } catch (e) {
-          console.error('❌ Invalid start frame URL:', candidateUrl, e);
-          console.warn('⚠️ Proceeding without start frame due to invalid URL');
-          startFrameUrl = null;
+      if (useStartFrameEl && useStartFrameEl.checked) {
+        const candidateUrl = editedImageUrl || imageUrl;
+        console.log('🔍 Chosen candidate URL:', candidateUrl ? candidateUrl.substring(0, 50) + '...' : 'null');
+        console.log('🔍 Choice logic: editedImageUrl || imageUrl →', editedImageUrl ? 'editedImageUrl' : 'imageUrl');
+        
+        // Validate start frame URL before using it
+        if (candidateUrl) {
+          try {
+            new URL(candidateUrl);
+            startFrameUrl = candidateUrl;
+            console.log('✅ Valid start frame URL confirmed:', startFrameUrl.substring(0, 50) + '...');
+          } catch (e) {
+            console.error('❌ Invalid start frame URL:', candidateUrl, e);
+            console.warn('⚠️ Proceeding without start frame due to invalid URL');
+            startFrameUrl = null;
+          }
+        } else {
+          console.log('ℹ️ No image URL available for start frame');
         }
       } else {
-        console.log('ℹ️ No image URL available for start frame');
+        console.log('⚠️ Start frame checkbox is UNCHECKED - not using start frame');
       }
-    } else {
-      console.log('⚠️ Start frame checkbox is UNCHECKED - not using start frame');
+    } catch (error) {
+      console.error('❌ Error in start frame selection logic:', error);
+      console.log('⚠️ Proceeding without start frame due to error');
+      startFrameUrl = null;
     }
     
     veo3Url = await generateVeo3Video(promptResult.video_prompt, startFrameUrl);
@@ -851,6 +906,12 @@ function clearOutputs() {
   imageStatus.textContent = "Waiting…";
   if (seededitStatus) seededitStatus.textContent = "Waiting…";
   if (veo3Status) veo3Status.textContent = "Waiting…";
+  
+  // Reset start frame checkbox and update visual feedback
+  if (useStartFrameEl) {
+    useStartFrameEl.checked = false;
+    updateStartFrameVisualFeedback();
+  }
 }
 
 function displayPrompts(promptResult) {
@@ -945,6 +1006,41 @@ async function callOpenAIForPrompts(profile) {
           `Oi gente! ${product} organizou toda minha farmácia em ${city}! Controle de remédios nunca foi tão fácil!`,
           `E aí! ${product} é essencial pra quem tem farmácia em ${city}! Gestão completa de medicamentos!`
         ];
+      } else if (businessType.includes('açougue')) {
+        return [
+          `E aí pessoal! ${product} revolucionou meu açougue em ${city}! Agora controlo estoque de carnes, validade, tudo!`,
+          `Beleza galera! Com ${product}, meu açougue em ${city} nunca mais perdeu produto por vencimento!`
+        ];
+      } else if (businessType.includes('tatuagem')) {
+        return [
+          `Salve! ${product} organizou meu studio de tatuagem em ${city}! Agendamentos, materiais, tudo no controle!`,
+          `E aí! Todo tatuador de ${city} precisa conhecer ${product}! Gestão completa do studio!`
+        ];
+      } else if (businessType.includes('oficina') || businessType.includes('mecânica')) {
+        return [
+          `E aí galera! ${product} transformou minha oficina em ${city}! Controlo peças, serviços, orçamentos, tudo!`,
+          `Opa! Todo mecânico de ${city} deveria usar ${product}! Organização total da oficina!`
+        ];
+      } else if (businessType.includes('marcenaria')) {
+        return [
+          `Beleza pessoal! ${product} organizou minha marcenaria em ${city}! Projetos, madeiras, ferramentas, tudo controlado!`,
+          `E aí! ${product} é essencial pra marceneiro em ${city}! Gestão completa dos projetos!`
+        ];
+      } else if (businessType.includes('barbearia')) {
+        return [
+          `Salve galera! ${product} revolucionou minha barbearia em ${city}! Agendamentos, produtos, tudo organizado!`,
+          `E aí! Todo barbeiro de ${city} precisa conhecer ${product}! Gestão completa do negócio!`
+        ];
+      } else if (businessType.includes('confeitaria')) {
+        return [
+          `Oi pessoal! ${product} transformou minha confeitaria em ${city}! Controlo doces, bolos, encomendas, tudo!`,
+          `Beleza! Com ${product}, minha confeitaria em ${city} nunca mais perdeu uma encomenda!`
+        ];
+      } else if (businessType.includes('veterinária')) {
+        return [
+          `E aí! ${product} organizou minha clínica veterinária em ${city}! Prontuários, medicamentos, tudo digitalizado!`,
+          `Opa! Todo veterinário de ${city} deveria usar ${product}! Cuidado animal de qualidade!`
+        ];
       } else {
         // Generic business messages
         return [
@@ -999,24 +1095,27 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `ETNIA OBRIGATÓRIA: Use sempre '${randomEthnicity}' para garantir diversidade racial brasileira`,
         `CIDADE OBRIGATÓRIA: Use sempre '${profile.city}' (SEM região) - NUNCA use outras cidades como Rio, São Paulo, Salvador, etc.`,
         `CNAE DO CLIENTE: ${profile.cnae || 'negócio genérico'} - USE O TIPO ESPECÍFICO DE NEGÓCIO (loja de instrumentos musicais, marcenaria, restaurante, etc.)`,
-        `GÊNERO DA PESSOA: ${profile.gender || 'Auto'} - NOME DO DONO: "${profile.ownerName}" - Se for nome masculino (João, Carlos, Rodrigo, etc.), use "Um homem brasileiro". Se feminino (Maria, Ana, etc.), use "Uma mulher brasileira". OBRIGATÓRIO analisar o nome!`,
+        `GÊNERO E PROFISSÃO: Analise o nome "${profile.ownerName}" para determinar gênero e combine com CNAE "${profile.cnae}" para criar título profissional apropriado:`,
+        `Exemplos: "uma dentista", "um açougueiro", "uma tatuadora", "um mecânico", "uma farmacêutica", "um advogado", etc.`,
+        `Para negócios sem profissão específica, use "um empresário" ou "uma empresária".`,
+        `IMPORTANTE: NÃO descreva aparência física (barba, cabelo, idade específica). Use apenas [título profissional] + [etnia] + [cidade].`,
         `CONTEXTO PROFISSIONAL: Adicione sutilmente roupa e localização apropriadas para a profissão (ex: "jaleco branco", "uniforme de trabalho", "terno", "avental"). Para localização, varie entre "interior" ou "exterior" conforme apropriado para a profissão.`,
         `CONTEXTO DE NEGÓCIO: Para loja de instrumentos musicais, inclua elementos como "violões ao fundo", "teclados expostos", "ambiente musical". Para outros negócios, use elementos específicos do ramo.`,
         "",
         "ESTRUTURA PARA IMAGE_PROMPT:",
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], interior/exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, descrição cinematográfica, sem letreiros visíveis'`,
-        `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada].'`,
+        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada].'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
         "",
         "ESTRUTURA PARA VIDEO_PROMPT:",  
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], mesmo ambiente da imagem na ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}'`,
-        `2. PERSONAGEM: 'Um(a) proprietário(a) brasileiro(a) de [idade] anos, [etnia], ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada].'`,
+        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada].'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
         `4. FALA: 'fala da pessoa: "${randomVideoText}"'`,
         "",
         `Exemplo de estrutura (USE OS DADOS EXATOS DO PERFIL):`,
-        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, ${profile.region}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. Um(a) proprietário(a) brasileiro(a) de [idade] anos, ${randomEthnicity}, ${profile.city}, [aparência detalhada], [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText}"'`,
+        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
+        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText}"'`,
         "",
         "",
         "INSTRUÇÕES CRÍTICAS FINAIS:",
@@ -1173,12 +1272,15 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
       json = await r.json();
     }
 
+    // Let LLM determine gender and profession - much smarter than hardcoded regex
+
     // Ensure we have both prompts with correct structure
     if (!json.image_prompt) {
       const city = profile.city || 'Brasil';
       const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
       const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
-      json.image_prompt = `Meio da tarde, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira de aparência simpática, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
+      // Let LLM handle gender and profession determination based on name and CNAE
+      json.image_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
     }
     
     if (!json.video_prompt) {
@@ -1199,7 +1301,8 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         fallbackMessage = `Iaí pessoal! Aqui em ${city}, ${product} triplicou meu faturamento! Negócio que era difícil ficou super fácil!`;
       }
       
-      json.video_prompt = `Meio da tarde, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira de aparência simpática, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
+      // Let LLM handle gender and profession determination based on name and CNAE
+      json.video_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
 
 fala da pessoa: "${fallbackMessage}"`;
     }
@@ -1505,6 +1608,14 @@ async function generateImage(imagePrompt) {
       imageContainer.appendChild(a);
       imageStatus.textContent = "Done.";
       
+      // Auto-enable start frame checkbox when image is generated
+      if (useStartFrameEl && enableVeo3El.checked) {
+        useStartFrameEl.checked = true;
+        console.log('🖼️ Auto-enabled start frame checkbox since image is available and video is enabled');
+        updatePricing(); // Update pricing display
+        updateStartFrameVisualFeedback();
+      }
+      
       // Update preview if showing image
       updatePreviewMode();
     } else {
@@ -1733,6 +1844,9 @@ async function generateSeededit(imageUrl) {
       seededitContainer.appendChild(a);
       
       if (seededitStatus) seededitStatus.textContent = "Done.";
+      
+      // Update start frame feedback since edited image is now available
+      updateStartFrameVisualFeedback();
       
       // Update preview if showing image
       console.log('🔄 Updating preview mode after text removal');

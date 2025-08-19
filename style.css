@@ -274,6 +274,39 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   color: var(--text);
 }
 
+/* Start Frame Visual Feedback Styles */
+.option-toggle.has-start-frame {
+  border-color: var(--green);
+  background: rgba(193, 247, 50, 0.05);
+}
+
+.option-toggle.start-frame-active {
+  border-color: var(--purple);
+  background: rgba(200, 126, 247, 0.1);
+  box-shadow: 0 0 0 1px rgba(200, 126, 247, 0.3);
+}
+
+.option-toggle input[type="checkbox"]:disabled + .checkmark {
+  background: #2a2b2f;
+  border-color: #2a2b2f;
+  opacity: 0.5;
+}
+
+.option-toggle:has(input[type="checkbox"]:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #151617;
+}
+
+.option-toggle:has(input[type="checkbox"]:disabled):hover {
+  background: #151617;
+  border-color: #2a2b2f;
+}
+
+.option-toggle:has(input[type="checkbox"]:disabled) .option-text {
+  color: var(--muted);
+}
+
 .product-callout {
   margin: 16px 0;
 }
