@@ -785,7 +785,8 @@ async function onGenerate() {
     
     // Use start frame: prefer edited image, fallback to original image
     let startFrameUrl = null;
-    console.log('🔍 Start frame checkbox state:', useStartFrameEl.checked);
+    console.log('🔍 Start frame checkbox element found:', !!useStartFrameEl);
+    console.log('🔍 Start frame checkbox state:', useStartFrameEl?.checked);
     console.log('🔍 Available URLs for start frame:');
     console.log('  - imageUrl:', imageUrl ? imageUrl.substring(0, 50) + '...' : 'null');
     console.log('  - editedImageUrl:', editedImageUrl ? editedImageUrl.substring(0, 50) + '...' : 'null');
