@@ -785,15 +785,22 @@ async function onGenerate() {
     
     // Use start frame: prefer edited image, fallback to original image
     let startFrameUrl = null;
+    console.log('🔍 Start frame checkbox state:', useStartFrameEl.checked);
+    console.log('🔍 Available URLs for start frame:');
+    console.log('  - imageUrl:', imageUrl ? imageUrl.substring(0, 50) + '...' : 'null');
+    console.log('  - editedImageUrl:', editedImageUrl ? editedImageUrl.substring(0, 50) + '...' : 'null');
+    
     if (useStartFrameEl.checked) {
       const candidateUrl = editedImageUrl || imageUrl;
+      console.log('🔍 Chosen candidate URL:', candidateUrl ? candidateUrl.substring(0, 50) + '...' : 'null');
+      console.log('🔍 Choice logic: editedImageUrl || imageUrl →', editedImageUrl ? 'editedImageUrl' : 'imageUrl');
       
       // Validate start frame URL before using it
       if (candidateUrl) {
         try {
           new URL(candidateUrl);
           startFrameUrl = candidateUrl;
-          console.log('✅ Valid start frame URL:', startFrameUrl);
+          console.log('✅ Valid start frame URL confirmed:', startFrameUrl.substring(0, 50) + '...');
         } catch (e) {
           console.error('❌ Invalid start frame URL:', candidateUrl, e);
           console.warn('⚠️ Proceeding without start frame due to invalid URL');
@@ -802,6 +809,8 @@ async function onGenerate() {
       } else {
         console.log('ℹ️ No image URL available for start frame');
       }
+    } else {
+      console.log('⚠️ Start frame checkbox is UNCHECKED - not using start frame');
     }
     
     veo3Url = await generateVeo3Video(promptResult.video_prompt, startFrameUrl);
@@ -1761,6 +1770,9 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
         // Add start frame if provided
         if (startFrameUrl) {
           body.input.start_frame = startFrameUrl;
+          console.log('🖼️ START FRAME ADDED to video request:', startFrameUrl.substring(0, 50) + '...');
+        } else {
+          console.log('⚠️ NO START FRAME - proceeding without start frame');
         }
 
         console.log('Video request body via Supabase:', JSON.stringify(body, null, 2));
