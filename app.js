@@ -1541,10 +1541,43 @@ async function generateSeededit(imageUrl) {
 
         const result = await response.json();
         console.log('✅ Replicate Seededit response via Supabase Edge Function received');
+        console.log('🔍 Full Seededit result:', JSON.stringify(result, null, 2));
+        console.log('🔍 Seededit result status:', result.status);
+        console.log('🔍 Seededit result output type:', typeof result.output);
+        console.log('🔍 Seededit result output:', result.output);
         
-        if (result.output && result.output.length > 0) {
-          editedImageUrl = result.output[0];
+        // Handle different possible response formats
+        let extractedUrl = null;
+        
+        if (result.output) {
+          if (Array.isArray(result.output) && result.output.length > 0) {
+            extractedUrl = result.output[0];
+            console.log('🖼️ Seededit URL extracted from array:', extractedUrl);
+          } else if (typeof result.output === 'string') {
+            extractedUrl = result.output;
+            console.log('🖼️ Seededit URL extracted as string:', extractedUrl);
+          } else {
+            console.error('❌ Unexpected seededit output format:', typeof result.output, result.output);
+          }
+        }
+        
+        // Validate URL before using it
+        if (extractedUrl) {
+          try {
+            const urlObj = new URL(extractedUrl);
+            if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+              editedImageUrl = extractedUrl;
+              console.log('✅ Valid seededit URL confirmed:', editedImageUrl);
+            } else {
+              console.error('❌ Invalid seededit URL protocol:', urlObj.protocol);
+              throw new Error(`Invalid seededit URL protocol: ${urlObj.protocol}`);
+            }
+          } catch (urlError) {
+            console.error('❌ Invalid seededit URL format:', extractedUrl, urlError);
+            throw new Error(`Invalid seededit URL format: ${extractedUrl}`);
+          }
         } else {
+          console.error('❌ No valid seededit URL found in result:', result);
           throw new Error('No edited image URL in response');
         }
         
