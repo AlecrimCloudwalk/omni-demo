@@ -377,7 +377,10 @@ function init() {
   videoAudioToggle.addEventListener("change", updateVideoAudio);
 
   // Pricing calculation event listeners
-  if (enableImageEl) enableImageEl.addEventListener('change', updatePricing);
+  if (enableImageEl) enableImageEl.addEventListener('change', () => {
+    updatePricing();
+    updateOptionDependencies();
+  });
   if (enableSeededitEl) enableSeededitEl.addEventListener('change', updatePricing);
   if (enableVeo3El) enableVeo3El.addEventListener('change', () => {
     updatePricing();
@@ -388,8 +391,9 @@ function init() {
     updateStartFrameVisualFeedback();
   });
 
-  // Initialize pricing and start frame feedback
+  // Initialize pricing, dependencies, and start frame feedback
   updatePricing();
+  updateOptionDependencies();
   updateStartFrameVisualFeedback();
 
   // No API card hiding needed since it's removed from HTML
@@ -427,6 +431,29 @@ function updatePricing() {
   
   if (totalPriceEl) {
     totalPriceEl.textContent = `$${total.toFixed(2)}`;
+  }
+  
+  // Update option dependencies
+  updateOptionDependencies();
+}
+
+function updateOptionDependencies() {
+  // Text removal requires image generation
+  const isImageEnabled = enableImageEl && enableImageEl.checked;
+  if (enableSeededitEl) {
+    enableSeededitEl.disabled = !isImageEnabled;
+    
+    const seededitLabel = enableSeededitEl.closest('.option-toggle');
+    if (seededitLabel) {
+      const optionText = seededitLabel.querySelector('.option-text');
+      if (optionText) {
+        if (!isImageEnabled) {
+          optionText.textContent = 'Remove Text from Image (Requires image generation)';
+        } else {
+          optionText.textContent = 'Remove Text from Image';
+        }
+      }
+    }
   }
 }
 
@@ -618,24 +645,19 @@ function updateStartFrameVisualFeedback() {
   const isVideoEnabled = enableVeo3El.checked;
   const isStartFrameChecked = useStartFrameEl.checked;
   
-  // Enable/disable checkbox based on availability
-  useStartFrameEl.disabled = !hasImage || !isVideoEnabled;
+  // Only disable if video generation is disabled (user can set preference before generating)
+  useStartFrameEl.disabled = !isVideoEnabled;
   
   // Add visual feedback classes
-  useStartFrameLabel.classList.toggle('has-start-frame', hasImage && isVideoEnabled);
-  useStartFrameLabel.classList.toggle('start-frame-active', isStartFrameChecked && hasImage && isVideoEnabled);
+  useStartFrameLabel.classList.toggle('start-frame-active', isStartFrameChecked && isVideoEnabled);
   
-  // Update option text to show what will be used
+  // Update option text based on state
   const optionText = useStartFrameLabel.querySelector('.option-text');
   if (optionText) {
-    if (!hasImage) {
-      optionText.textContent = 'Use Image as Start Frame (No image available)';
-    } else if (!isVideoEnabled) {
+    if (!isVideoEnabled) {
       optionText.textContent = 'Use Image as Start Frame (Video disabled)';
-    } else if (hasEditedImage && isStartFrameChecked) {
-      optionText.textContent = 'Use Edited Image as Start Frame';
-    } else if (hasImage && isStartFrameChecked) {
-      optionText.textContent = 'Use Original Image as Start Frame';
+    } else if (isStartFrameChecked) {
+      optionText.textContent = 'Use Image as Start Frame (if available)';
     } else {
       optionText.textContent = 'Use Image as Start Frame';
     }
@@ -858,10 +880,10 @@ async function onGenerate() {
             startFrameUrl = null;
           }
         } else {
-          console.log('ℹ️ No image URL available for start frame');
+          console.log('ℹ️ Start frame enabled but no image available - proceeding without start frame');
         }
       } else {
-        console.log('⚠️ Start frame checkbox is UNCHECKED - not using start frame');
+        console.log('ℹ️ Start frame disabled - proceeding without start frame');
       }
     } catch (error) {
       console.error('❌ Error in start frame selection logic:', error);
@@ -907,11 +929,8 @@ function clearOutputs() {
   if (seededitStatus) seededitStatus.textContent = "Waiting…";
   if (veo3Status) veo3Status.textContent = "Waiting…";
   
-  // Reset start frame checkbox and update visual feedback
-  if (useStartFrameEl) {
-    useStartFrameEl.checked = false;
-    updateStartFrameVisualFeedback();
-  }
+  // Update start frame visual feedback
+  updateStartFrameVisualFeedback();
 }
 
 function displayPrompts(promptResult) {
@@ -1608,13 +1627,8 @@ async function generateImage(imagePrompt) {
       imageContainer.appendChild(a);
       imageStatus.textContent = "Done.";
       
-      // Auto-enable start frame checkbox when image is generated
-      if (useStartFrameEl && enableVeo3El.checked) {
-        useStartFrameEl.checked = true;
-        console.log('🖼️ Auto-enabled start frame checkbox since image is available and video is enabled');
-        updatePricing(); // Update pricing display
-        updateStartFrameVisualFeedback();
-      }
+      // Update start frame feedback now that image is available  
+      updateStartFrameVisualFeedback();
       
       // Update preview if showing image
       updatePreviewMode();

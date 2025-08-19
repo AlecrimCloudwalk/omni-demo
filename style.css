@@ -275,10 +275,7 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
 }
 
 /* Start Frame Visual Feedback Styles */
-.option-toggle.has-start-frame {
-  border-color: var(--green);
-  background: rgba(193, 247, 50, 0.05);
-}
+
 
 .option-toggle.start-frame-active {
   border-color: var(--purple);
