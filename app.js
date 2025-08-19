@@ -1781,7 +1781,7 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
 
         // Add start frame if provided
         if (startFrameUrl) {
-          body.input.start_frame = startFrameUrl;
+          body.input.image = startFrameUrl;
           console.log('🖼️ START FRAME ADDED to video request:', startFrameUrl.substring(0, 50) + '...');
         } else {
           console.log('⚠️ NO START FRAME - proceeding without start frame');
