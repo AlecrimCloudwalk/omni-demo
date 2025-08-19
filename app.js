@@ -945,10 +945,56 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
 
     let json;
     
-    if (GITHUB_PAGES_MODE) {
-      // GitHub Pages always uses direct OpenAI API calls
-      // Note: Even with auth, we don't have serverless functions on GitHub Pages
-      // Direct OpenAI API call (GitHub Pages doesn't have serverless functions)
+    // Check if user is authenticated with Supabase (use Edge Functions)
+    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken && window.supabaseConfig) {
+      console.log('🔄 Using Supabase Edge Function for OpenAI API call');
+      
+      try {
+        const authToken = await window.cloudwalkAuth.getAuthToken();
+        if (!authToken) {
+          throw new Error('Failed to get authentication token');
+        }
+
+        const response = await fetch(`${window.supabaseConfig.functions.openai}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a JSON generator. Always respond with valid JSON only, no explanations or extra text.'
+              },
+              {
+                role: 'user', 
+                content: user.rules.join('\n') + '\n\nRETURNE APENAS JSON VÁLIDO:'
+              }
+            ],
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('🚨 Supabase Edge Function error:', response.status, errorText);
+          throw new Error(`Supabase Edge Function failed: ${response.status}`);
+        }
+
+        json = await response.json();
+        console.log('✅ OpenAI response via Supabase Edge Function received');
+        
+      } catch (error) {
+        console.error('🚨 Supabase Edge Function call failed:', error);
+        throw error;
+      }
+      
+    } else if (GITHUB_PAGES_MODE) {
+      // Fallback to direct OpenAI API call with client-side keys
+      console.warn('⚠️ Falling back to direct OpenAI API call (client-side keys)');
       const openaiKey = SecurityUtils.secureRetrieve('openai_api_key');
       if (!openaiKey) {
         showApiNoticeIfNeeded();
@@ -1094,14 +1140,72 @@ async function generateImage(imagePrompt) {
     };
          // Status is already set by caller function
      
-     let imageUrl;
-     if (GITHUB_PAGES_MODE) {
-       // Direct Replicate API call with CORS proxy for GitHub Pages
-       const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
-       if (!replicateKey) {
-         showApiNoticeIfNeeded();
-         throw new Error('Please provide your Replicate API key using the key input above');
-       }
+         let imageUrl;
+    
+    // Check if user is authenticated with Supabase (use Edge Functions)
+    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken && window.supabaseConfig) {
+      console.log('🔄 Using Supabase Edge Function for Replicate Image API call');
+      
+      try {
+        const authToken = await window.cloudwalkAuth.getAuthToken();
+        if (!authToken) {
+          throw new Error('Failed to get authentication token');
+        }
+
+        const imageSeed = generateSeedVariation(window.currentMasterSeed || generateBetterRandomSeed(), 1);
+        console.log(`🖼️ Image Seed: ${imageSeed} (Master: ${window.currentMasterSeed})`);
+
+        const body = {
+          model: 'bytedance/seedream-3',
+          input: {
+            prompt: finalPrompt,
+            guidance_scale: 2.5,
+            seed: imageSeed,
+            width: 1000,
+            height: 1000,
+            num_outputs: 1
+          }
+        };
+
+        console.log('Image request body via Supabase:', JSON.stringify(body, null, 2));
+
+        const response = await fetch(`${window.supabaseConfig.functions.replicate}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('🚨 Supabase Replicate Edge Function error:', response.status, errorText);
+          throw new Error(`Supabase Replicate Edge Function failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Replicate response via Supabase Edge Function received');
+        
+        if (result.output && result.output.length > 0) {
+          imageUrl = result.output[0];
+        } else {
+          throw new Error('No image URL in response');
+        }
+        
+      } catch (error) {
+        console.error('🚨 Supabase Replicate Edge Function call failed:', error);
+        throw error;
+      }
+      
+    } else if (GITHUB_PAGES_MODE) {
+      // Fallback to direct Replicate API call with client-side keys
+      console.warn('⚠️ Falling back to direct Replicate API call (client-side keys)');
+      const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
+      if (!replicateKey) {
+        showApiNoticeIfNeeded();
+        throw new Error('Please provide your Replicate API key using the key input above');
+      }
        
        // Use corsproxy.io which supports Authorization headers
        const corsProxy = 'https://corsproxy.io/?';
@@ -1232,8 +1336,64 @@ async function generateSeededit(imageUrl) {
     }
 
     let editedImageUrl;
-    if (GITHUB_PAGES_MODE) {
-      // Direct Replicate API call with CORS proxy for GitHub Pages
+    
+    // Check if user is authenticated with Supabase (use Edge Functions)
+    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken && window.supabaseConfig) {
+      console.log('🔄 Using Supabase Edge Function for Replicate Seededit API call');
+      
+      try {
+        const authToken = await window.cloudwalkAuth.getAuthToken();
+        if (!authToken) {
+          throw new Error('Failed to get authentication token');
+        }
+
+        const seededitSeed = generateSeedVariation(window.currentMasterSeed || generateBetterRandomSeed(), 2);
+        console.log(`🔧 Seededit Seed: ${seededitSeed} (Master: ${window.currentMasterSeed})`);
+
+        const body = {
+          model: 'bytedance/seededit-3.0',
+          input: {
+            image: imageUrl,
+            prompt: "remove text from image, remove name of the shop, remove letterings, remove subtitle, remove storefront name, remove text, remove all written, remove every text",
+            guidance_scale: 5.5,
+            seed: seededitSeed
+          }
+        };
+
+        console.log('Seededit request body via Supabase:', JSON.stringify(body, null, 2));
+
+        const response = await fetch(`${window.supabaseConfig.functions.replicate}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('🚨 Supabase Replicate Seededit Edge Function error:', response.status, errorText);
+          throw new Error(`Supabase Replicate Seededit Edge Function failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Replicate Seededit response via Supabase Edge Function received');
+        
+        if (result.output && result.output.length > 0) {
+          editedImageUrl = result.output[0];
+        } else {
+          throw new Error('No edited image URL in response');
+        }
+        
+      } catch (error) {
+        console.error('🚨 Supabase Replicate Seededit Edge Function call failed:', error);
+        throw error;
+      }
+      
+    } else if (GITHUB_PAGES_MODE) {
+      // Fallback to direct Replicate API call with client-side keys
+      console.warn('⚠️ Falling back to direct Replicate Seededit API call (client-side keys)');
       const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
       if (!replicateKey) {
         showApiNoticeIfNeeded();
@@ -1344,14 +1504,75 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
     // Prompt is already displayed by displayPrompts() function
          // Status is already set by caller function
      
-     let videoUrl;
-     if (GITHUB_PAGES_MODE) {
-       // Direct Replicate API call with CORS proxy for GitHub Pages
-       const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
-       if (!replicateKey) {
-         showApiNoticeIfNeeded();
-         throw new Error('Please provide your Replicate API key using the key input above');
-       }
+         let videoUrl;
+    
+    // Check if user is authenticated with Supabase (use Edge Functions)
+    if (window.cloudwalkAuth?.isAuthenticated && window.cloudwalkAuth?.user?.accessToken && window.supabaseConfig) {
+      console.log('🔄 Using Supabase Edge Function for Replicate Video API call');
+      
+      try {
+        const authToken = await window.cloudwalkAuth.getAuthToken();
+        if (!authToken) {
+          throw new Error('Failed to get authentication token');
+        }
+
+        const videoSeed = generateSeedVariation(window.currentMasterSeed || generateBetterRandomSeed(), 3);
+        console.log(`🎬 Video Seed: ${videoSeed} (Master: ${window.currentMasterSeed})`);
+
+        const body = {
+          model: 'google/veo-3-fast',
+          input: {
+            prompt: videoPrompt,
+            aspect_ratio: "16:9",
+            duration: 5,
+            seed: videoSeed
+          }
+        };
+
+        // Add start frame if provided
+        if (startFrameUrl) {
+          body.input.start_frame = startFrameUrl;
+        }
+
+        console.log('Video request body via Supabase:', JSON.stringify(body, null, 2));
+
+        const response = await fetch(`${window.supabaseConfig.functions.replicate}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('🚨 Supabase Replicate Video Edge Function error:', response.status, errorText);
+          throw new Error(`Supabase Replicate Video Edge Function failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Replicate Video response via Supabase Edge Function received');
+        
+        if (result.output && result.output.length > 0) {
+          videoUrl = result.output[0];
+        } else {
+          throw new Error('No video URL in response');
+        }
+        
+      } catch (error) {
+        console.error('🚨 Supabase Replicate Video Edge Function call failed:', error);
+        throw error;
+      }
+      
+    } else if (GITHUB_PAGES_MODE) {
+      // Fallback to direct Replicate API call with client-side keys
+      console.warn('⚠️ Falling back to direct Replicate Video API call (client-side keys)');
+      const replicateKey = SecurityUtils.secureRetrieve('replicate_api_key');
+      if (!replicateKey) {
+        showApiNoticeIfNeeded();
+        throw new Error('Please provide your Replicate API key using the key input above');
+      }
        
        // Use corsproxy.io which supports Authorization headers
        const corsProxy = 'https://corsproxy.io/?';

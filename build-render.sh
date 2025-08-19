@@ -35,5 +35,4 @@ CONFIGEOF
 
 echo "✅ Supabase config created with environment variables"
 echo "📦 Config file size: $(wc -c < supabase-config.js) bytes"
-echo "🔍 Config preview:"
-head -10 supabase-config.js
+echo "🔍 Config created successfully (credentials not logged for security)"
