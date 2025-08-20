@@ -332,6 +332,28 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   border-color: #4a9eff;
 }
 
+.lock-custom-section {
+  margin: 16px 0;
+  background: rgba(200, 126, 247, 0.05);
+  border: 1px solid rgba(200, 126, 247, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.lock-custom-section h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--purple);
+  font-weight: 600;
+}
+
+.lock-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+
 .action-buttons {
   display: flex;
   gap: 12px;
@@ -412,6 +434,14 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   margin-bottom: 12px; 
 }
 
+.profile-section label small {
+  color: var(--green);
+  font-weight: normal;
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 .profile-section input, .profile-section select { 
   width: 100%; 
   padding: 10px 12px; 
@@ -419,6 +449,17 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   border: 1px solid #2a2b2f; 
   background: #121316; 
   color: var(--text); 
+}
+
+.profile-section label.has-custom-value {
+  border-left: 3px solid var(--green);
+  background: rgba(193, 247, 50, 0.05);
+  padding-left: 12px;
+  border-radius: 0 8px 8px 0;
+}
+
+.profile-section label.has-custom-value input {
+  border-color: var(--green);
 }
 button { appearance: none; background: #232427; color: var(--text); border: 1px solid #2c2e33; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
 button.primary { background: linear-gradient(90deg, var(--green), var(--purple)); color: #101010; font-weight: 600; }
@@ -733,7 +774,8 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 .overlay-text-result,
-.button-text-result {
+.button-text-result,
+.custom-notes-result {
   background: #0f1114;
   border-radius: 8px;
   padding: 12px;
@@ -741,7 +783,8 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 .overlay-text-result label,
-.button-text-result label {
+.button-text-result label,
+.custom-notes-result label {
   display: block;
   font-size: 12px;
   font-weight: 600;
@@ -751,22 +794,69 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   letter-spacing: 0.5px;
 }
 
-.overlay-text-result div,
-.button-text-result div {
+.overlay-text-result textarea,
+.button-text-result input,
+.custom-notes-result textarea {
+  width: 100%;
+  background: #121316;
+  border: 1px solid #2a2b2f;
+  border-radius: 6px;
+  padding: 8px 10px;
   font-size: 14px;
   color: var(--text);
   font-weight: 500;
-  min-height: 20px;
+  font-family: inherit;
+  resize: none;
+  transition: border-color 0.2s ease;
 }
 
-.overlay-text-result div {
-  white-space: pre-line;
+.overlay-text-result textarea:focus,
+.button-text-result input:focus,
+.custom-notes-result textarea:focus {
+  outline: none;
+  border-color: var(--green);
 }
 
-.button-text-result div {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.overlay-text-result textarea::placeholder,
+.button-text-result input::placeholder,
+.custom-notes-result textarea::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.text-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.overlay-text-result label small,
+.button-text-result label small,
+.custom-notes-result label small {
+  color: var(--green);
+  font-weight: normal;
+}
+
+.overlay-text-result.has-custom-value,
+.button-text-result.has-custom-value,
+.custom-notes-result.has-custom-value {
+  border-left: 3px solid var(--green);
+  background: rgba(193, 247, 50, 0.05);
+}
+
+.overlay-text-result.has-custom-value textarea,
+.button-text-result.has-custom-value input,
+.custom-notes-result.has-custom-value textarea {
+  border-color: var(--green);
+}
+
+.custom-notes-result textarea {
+  min-height: 60px;
+}
+
+.custom-notes-result label small {
+  color: var(--purple);
 }
 
 
@@ -1207,6 +1297,97 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .sign-out-btn:hover {
   background: rgba(200, 126, 247, 0.2);
   border-color: var(--purple);
+}
+
+/* CNAE Search Styles */
+.cnae-search-container {
+  position: relative;
+  width: 100%;
+}
+
+.cnae-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border: 1px solid #2a2b2f;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+}
+
+.cnae-dropdown.show {
+  display: block;
+}
+
+.cnae-option {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #1a1b1d;
+  transition: background-color 0.2s ease;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cnae-option:last-child {
+  border-bottom: none;
+}
+
+.cnae-option:hover,
+.cnae-option.highlighted {
+  background: #202124;
+}
+
+.cnae-option.selected {
+  background: rgba(193, 247, 50, 0.1);
+  border-left: 3px solid var(--green);
+}
+
+.cnae-code {
+  color: var(--green);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cnae-description {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.cnae-no-results {
+  padding: 16px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 14px;
+}
+
+/* Focus styles for CNAE input */
+#cnae:focus + .cnae-dropdown {
+  border-color: var(--green);
+}
+
+/* Custom scrollbar for CNAE dropdown */
+.cnae-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cnae-dropdown::-webkit-scrollbar-track {
+  background: #1a1b1d;
+}
+
+.cnae-dropdown::-webkit-scrollbar-thumb {
+  background: #2a2b2f;
+  border-radius: 3px;
+}
+
+.cnae-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #3a3b3f;
 }
 
 /* Mobile responsive user info */

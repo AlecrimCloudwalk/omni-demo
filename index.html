@@ -107,6 +107,16 @@
                   <label for="productCallout">Product to call out:</label>
                   <input type="text" id="productCallout" value="JIM assistente virtual no app" placeholder="Product or service to promote">
                 </div>
+                <div class="lock-custom-section">
+                  <h4>Custom Values Protection</h4>
+                  <label class="option-toggle">
+                    <input id="lockCustomValues" type="checkbox">
+                    <span class="checkmark"></span>
+                    <span class="option-text">Lock custom values from shuffle</span>
+                  </label>
+                  <div class="lock-hint">When enabled, shuffle won't overwrite your custom entries</div>
+                </div>
+                
                 <div class="action-buttons">
                   <button id="shuffleBtn" type="button" class="shuffle-btn">🎲 Shuffle</button>
                   <button id="generateBtn" type="button" class="generate-btn">Generate</button>
@@ -121,16 +131,19 @@
         <div class="profile-content">
         <div class="form-grid">
           <label>
-            Business name
-            <input id="businessName" type="text" placeholder="Padaria Pão Quentinho" />
+            Business name <small>(custom allowed)</small>
+            <input id="businessName" type="text" placeholder="e.g., Padaria Pão Quentinho, Studio Harmonia, Açougue Central..." />
           </label>
           <label>
-            Owner name
-            <input id="ownerName" type="text" placeholder="Maria Silva" />
+            Owner name <small>(custom allowed)</small>
+            <input id="ownerName" type="text" placeholder="e.g., Maria Silva, João Santos, Ana Costa..." />
           </label>
           <label>
             CNAE / Segment
-            <select id="cnae"></select>
+            <div class="cnae-search-container">
+              <input id="cnae" type="text" placeholder="Search for CNAE code or business type..." autocomplete="off">
+              <div id="cnaeDropdown" class="cnae-dropdown"></div>
+            </div>
           </label>
           <label>
             Region
@@ -188,12 +201,19 @@
         <h3>Generated Texts</h3>
         <div class="text-results">
           <div class="overlay-text-result">
-            <label>Overlay Text:</label>
-            <div id="overlayTextDisplay">—</div>
+            <label>Overlay Text: <small>(editable)</small></label>
+            <textarea id="overlayTextDisplay" placeholder="Generated overlay text will appear here..." rows="2" maxlength="30"></textarea>
+            <div class="text-hint">Max 30 chars, use \n for line breaks</div>
           </div>
           <div class="button-text-result">
-            <label>Button Text:</label>
-            <div id="buttonTextDisplay">—</div>
+            <label>Button Text: <small>(editable)</small></label>
+            <input type="text" id="buttonTextDisplay" placeholder="Generated button text will appear here..." maxlength="15">
+            <div class="text-hint">Max 15 chars</div>
+          </div>
+          <div class="custom-notes-result">
+            <label>Custom Notes: <small>(optional)</small></label>
+            <textarea id="customNotesDisplay" placeholder="Add custom instructions for AI generation (e.g., 'make it more energetic', 'focus on family business', 'include local landmarks')..." rows="3" maxlength="200"></textarea>
+            <div class="text-hint">Max 200 chars - will be added to all AI prompts</div>
           </div>
         </div>
       </div>

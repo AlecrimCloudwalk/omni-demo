@@ -120,6 +120,7 @@ const GENDER_BY_CNAE = {
 // API keys are now handled server-side via environment variables
 
 const cnaeEl = document.getElementById("cnae");
+const cnaeDropdownEl = document.getElementById("cnaeDropdown");
 const regionEl = document.getElementById("region");
 const cityEl = document.getElementById("city");
 const genderEl = document.getElementById("gender");
@@ -141,6 +142,10 @@ const enableSeededitEl = document.getElementById("enableSeededit");
 const useStartFrameEl = document.getElementById("useStartFrame");
 const enableVeo3El = document.getElementById("enableVeo3");
 const totalPriceEl = document.getElementById("totalPrice");
+const lockCustomValuesEl = document.getElementById("lockCustomValues");
+const overlayTextDisplayEl = document.getElementById("overlayTextDisplay");
+const buttonTextDisplayEl = document.getElementById("buttonTextDisplay");
+const customNotesDisplayEl = document.getElementById("customNotesDisplay");
 
 const imageStatus = document.getElementById("imageStatus");
 const seededitStatus = document.getElementById("seededitStatus");
@@ -163,13 +168,276 @@ const previewEditedRadio = document.getElementById("previewEdited");
 const previewVideoRadio = document.getElementById("previewVideo");
 const videoAudioToggle = document.getElementById("videoAudioToggle");
 
+// CNAE Search Variables
+let filteredCnaeOptions = [];
+let selectedCnaeIndex = -1;
+let currentCnaeValue = "";
+
+// Custom Values Tracking
+let hasCustomOverlayText = false;
+let hasCustomButtonText = false;
+let hasCustomNotes = false;
+let originalFormData = {};
+
+// CNAE Search Functions
+function initCnaeSearch() {
+  cnaeEl.addEventListener('input', handleCnaeInput);
+  cnaeEl.addEventListener('focus', handleCnaeFocus);
+  cnaeEl.addEventListener('blur', handleCnaeBlur);
+  cnaeEl.addEventListener('keydown', handleCnaeKeydown);
+  
+  // Click outside to close dropdown
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.cnae-search-container')) {
+      hideCnaeDropdown();
+    }
+  });
+}
+
+function handleCnaeInput(e) {
+  const query = e.target.value.trim();
+  if (query.length === 0) {
+    hideCnaeDropdown();
+    currentCnaeValue = "";
+    return;
+  }
+  
+  filteredCnaeOptions = filterCnaeOptions(query);
+  selectedCnaeIndex = -1;
+  displayCnaeDropdown(filteredCnaeOptions);
+}
+
+function handleCnaeFocus(e) {
+  const query = e.target.value.trim();
+  if (query.length > 0) {
+    filteredCnaeOptions = filterCnaeOptions(query);
+    displayCnaeDropdown(filteredCnaeOptions);
+  }
+}
+
+function handleCnaeBlur(e) {
+  // Delay hiding to allow for clicks on dropdown items
+  setTimeout(() => {
+    hideCnaeDropdown();
+  }, 150);
+}
+
+function handleCnaeKeydown(e) {
+  if (!cnaeDropdownEl.classList.contains('show')) {
+    if (e.key === 'Enter') {
+      // Allow custom CNAE entry on Enter when dropdown is closed
+      e.preventDefault();
+      currentCnaeValue = cnaeEl.value.trim();
+      cnaeEl.blur();
+    }
+    return;
+  }
+  
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault();
+      selectedCnaeIndex = Math.min(selectedCnaeIndex + 1, filteredCnaeOptions.length - 1);
+      updateCnaeHighlight();
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      selectedCnaeIndex = Math.max(selectedCnaeIndex - 1, -1);
+      updateCnaeHighlight();
+      break;
+    case 'Enter':
+      e.preventDefault();
+      if (selectedCnaeIndex >= 0) {
+        selectCnaeOption(filteredCnaeOptions[selectedCnaeIndex]);
+      } else {
+        // Accept current input as custom CNAE
+        currentCnaeValue = cnaeEl.value.trim();
+        hideCnaeDropdown();
+        cnaeEl.blur();
+      }
+      break;
+    case 'Escape':
+      hideCnaeDropdown();
+      cnaeEl.blur();
+      break;
+  }
+}
+
+function filterCnaeOptions(query) {
+  const lowerQuery = query.toLowerCase();
+  return CNAE_OPTIONS.filter(option => {
+    const lowerOption = option.toLowerCase();
+    return lowerOption.includes(lowerQuery) || 
+           lowerOption.replace(/[^a-z0-9]/g, '').includes(lowerQuery.replace(/[^a-z0-9]/g, ''));
+  });
+}
+
+function displayCnaeDropdown(options) {
+  cnaeDropdownEl.innerHTML = '';
+  
+  if (options.length === 0) {
+    const noResults = document.createElement('div');
+    noResults.className = 'cnae-no-results';
+    noResults.innerHTML = `
+      <div>No matching CNAEs found</div>
+      <small style="color: var(--green); margin-top: 4px; display: block;">
+        💡 Press Enter to use "${cnaeEl.value}" as custom CNAE
+      </small>
+    `;
+    cnaeDropdownEl.appendChild(noResults);
+  } else {
+    options.forEach((option, index) => {
+      const optionEl = document.createElement('div');
+      optionEl.className = 'cnae-option';
+      optionEl.dataset.index = index;
+      
+      const [code, description] = option.split(' - ');
+      optionEl.innerHTML = `
+        <span class="cnae-code">${code}</span>
+        <span class="cnae-description">- ${description}</span>
+      `;
+      
+      optionEl.addEventListener('click', () => selectCnaeOption(option));
+      cnaeDropdownEl.appendChild(optionEl);
+    });
+  }
+  
+  cnaeDropdownEl.classList.add('show');
+  updateCnaeHighlight();
+}
+
+function hideCnaeDropdown() {
+  cnaeDropdownEl.classList.remove('show');
+  selectedCnaeIndex = -1;
+}
+
+function updateCnaeHighlight() {
+  const options = cnaeDropdownEl.querySelectorAll('.cnae-option');
+  options.forEach((option, index) => {
+    option.classList.toggle('highlighted', index === selectedCnaeIndex);
+  });
+  
+  // Scroll highlighted option into view
+  if (selectedCnaeIndex >= 0 && options[selectedCnaeIndex]) {
+    options[selectedCnaeIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function selectCnaeOption(option) {
+  cnaeEl.value = option;
+  currentCnaeValue = option;
+  hideCnaeDropdown();
+  cnaeEl.blur();
+}
+
+// Custom Text Tracking Functions
+function initCustomTextTracking() {
+  // Track when user modifies overlay text
+  overlayTextDisplayEl.addEventListener('input', () => {
+    hasCustomOverlayText = overlayTextDisplayEl.value.trim() !== '';
+    updateTextInputStatus();
+  });
+  
+  // Track when user modifies button text
+  buttonTextDisplayEl.addEventListener('input', () => {
+    hasCustomButtonText = buttonTextDisplayEl.value.trim() !== '';
+    updateTextInputStatus();
+  });
+  
+  // Track when user modifies custom notes
+  customNotesDisplayEl.addEventListener('input', () => {
+    hasCustomNotes = customNotesDisplayEl.value.trim() !== '';
+    updateTextInputStatus();
+  });
+  
+  // Update overlay text in real-time
+  overlayTextDisplayEl.addEventListener('input', () => {
+    updateOverlayText(overlayTextDisplayEl.value, buttonTextDisplayEl.value);
+  });
+  
+  // Update button text in real-time
+  buttonTextDisplayEl.addEventListener('input', () => {
+    updateOverlayText(overlayTextDisplayEl.value, buttonTextDisplayEl.value);
+  });
+  
+  // Add visual feedback for custom business/owner names
+  businessNameEl.addEventListener('input', () => {
+    if (businessNameEl.value.trim()) {
+      businessNameEl.parentElement.classList.add('has-custom-value');
+    } else {
+      businessNameEl.parentElement.classList.remove('has-custom-value');
+    }
+  });
+  
+  ownerNameEl.addEventListener('input', () => {
+    if (ownerNameEl.value.trim()) {
+      ownerNameEl.parentElement.classList.add('has-custom-value');
+    } else {
+      ownerNameEl.parentElement.classList.remove('has-custom-value');
+    }
+  });
+}
+
+function updateTextInputStatus() {
+  // Add visual indicator for custom values
+  if (hasCustomOverlayText) {
+    overlayTextDisplayEl.parentElement.classList.add('has-custom-value');
+  } else {
+    overlayTextDisplayEl.parentElement.classList.remove('has-custom-value');
+  }
+  
+  if (hasCustomButtonText) {
+    buttonTextDisplayEl.parentElement.classList.add('has-custom-value');
+  } else {
+    buttonTextDisplayEl.parentElement.classList.remove('has-custom-value');
+  }
+  
+  if (hasCustomNotes) {
+    customNotesDisplayEl.parentElement.classList.add('has-custom-value');
+  } else {
+    customNotesDisplayEl.parentElement.classList.remove('has-custom-value');
+  }
+}
+
+function captureFormData() {
+  originalFormData = {
+    businessName: businessNameEl.value.trim(),
+    ownerName: ownerNameEl.value.trim(),
+    cnae: cnaeEl.value.trim(),
+    region: regionEl.value,
+    city: cityEl.value,
+    gender: genderEl.value,
+    tpv: tpvEl.value,
+    avgTicket: avgTicketEl.value,
+    salesCount: salesCountEl.value,
+    onlineShare: onlineShareEl.value,
+    storefront: storefrontEl.value,
+    signatureItem: signatureItemEl.value.trim()
+  };
+}
+
+function hasNonEmptyFormData() {
+  return originalFormData.businessName || 
+         originalFormData.ownerName || 
+         originalFormData.cnae || 
+         originalFormData.tpv || 
+         originalFormData.avgTicket || 
+         originalFormData.salesCount || 
+         originalFormData.onlineShare || 
+         originalFormData.signatureItem;
+}
+
 init();
 
 function init() {
-  CNAE_OPTIONS.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c; opt.textContent = c; cnaeEl.appendChild(opt);
-  });
+  // Initialize CNAE search functionality
+  initCnaeSearch();
+  
+  // Initialize custom text tracking
+  initCustomTextTracking();
+  
+  // Capture initial empty state
+  captureFormData();
+  
   Object.keys(REGIONS).forEach((r) => {
     const opt = document.createElement("option");
     opt.value = r; opt.textContent = r; regionEl.appendChild(opt);
@@ -516,6 +784,9 @@ async function onShuffle() {
     shuffleBtn.disabled = true;
     shuffleBtn.textContent = "Shuffling...";
     
+    // Capture current form data before shuffle
+    captureFormData();
+    
     // Add cache-busting timestamp for better randomization
     const timestamp = Date.now();
     const res = await fetch(`./clients.sample.json?t=${timestamp}`);
@@ -538,7 +809,9 @@ async function onShuffle() {
     const timesOfDay = ['Amanhecer', 'Meio-dia ensolarado', 'Final de tarde', 'Anoitecer', 'Noite'];
     const randomTime = timesOfDay[Math.floor(Math.random() * timesOfDay.length)];
     
-    fillForm(sample);
+    // Check if we should preserve custom values
+    const shouldLockCustom = lockCustomValuesEl.checked;
+    fillForm(sample, shouldLockCustom);
     
     // Store random time for prompt generation
     window.randomTimeOfDay = randomTime;
@@ -555,25 +828,53 @@ async function onShuffle() {
   }
 }
 
-function fillForm(d) {
-  businessNameEl.value = d.businessName || "";
-  ownerNameEl.value = d.ownerName || "";
-  selectValue(cnaeEl, d.cnae);
-  selectValue(regionEl, d.region);
-  updateCities();
-  selectValue(cityEl, d.city);
-  selectValue(genderEl, d.gender || "");
-  tpvEl.value = d.tpv ?? "";
-  avgTicketEl.value = d.avgTicket ?? "";
-  salesCountEl.value = d.salesCount ?? "";
-  onlineShareEl.value = d.onlineShare ?? "";
-  selectValue(storefrontEl, d.storefront || "street");
-  signatureItemEl.value = d.signatureItem || "";
+function fillForm(d, shouldLockCustom = false) {
+  // Only fill if not locked or if the field is empty
+  if (!shouldLockCustom || !originalFormData.businessName) {
+    businessNameEl.value = d.businessName || "";
+  }
+  if (!shouldLockCustom || !originalFormData.ownerName) {
+    ownerNameEl.value = d.ownerName || "";
+  }
+  if (!shouldLockCustom || !originalFormData.cnae) {
+    selectValue(cnaeEl, d.cnae);
+  }
+  if (!shouldLockCustom) {
+    selectValue(regionEl, d.region);
+    updateCities();
+    selectValue(cityEl, d.city);
+    selectValue(genderEl, d.gender || "");
+  }
+  if (!shouldLockCustom || !originalFormData.tpv) {
+    tpvEl.value = d.tpv ?? "";
+  }
+  if (!shouldLockCustom || !originalFormData.avgTicket) {
+    avgTicketEl.value = d.avgTicket ?? "";
+  }
+  if (!shouldLockCustom || !originalFormData.salesCount) {
+    salesCountEl.value = d.salesCount ?? "";
+  }
+  if (!shouldLockCustom || !originalFormData.onlineShare) {
+    onlineShareEl.value = d.onlineShare ?? "";
+  }
+  if (!shouldLockCustom) {
+    selectValue(storefrontEl, d.storefront || "street");
+  }
+  if (!shouldLockCustom || !originalFormData.signatureItem) {
+    signatureItemEl.value = d.signatureItem || "";
+  }
 }
 
-function selectValue(select, val) {
-  const idx = Array.from(select.options).findIndex(o => o.value === val);
-  select.selectedIndex = idx >= 0 ? idx : 0;
+function selectValue(element, val) {
+  if (element.id === 'cnae') {
+    // Handle CNAE search input
+    element.value = val || "";
+    currentCnaeValue = val || "";
+  } else {
+    // Handle regular select elements
+    const idx = Array.from(element.options).findIndex(o => o.value === val);
+    element.selectedIndex = idx >= 0 ? idx : 0;
+  }
 }
 
 // API key functions removed - handled server-side
@@ -737,8 +1038,19 @@ function displayPrompts(promptResult) {
     veo3PromptEl.classList.add("show");
   }
   
-  // Update overlay text in the app preview
-  updateOverlayText(promptResult.overlay_text, promptResult.button_text);
+  // Update text inputs only if they don't have custom values
+  if (!hasCustomOverlayText && promptResult.overlay_text) {
+    overlayTextDisplayEl.value = promptResult.overlay_text;
+  }
+  
+  if (!hasCustomButtonText && promptResult.button_text) {
+    buttonTextDisplayEl.value = promptResult.button_text;
+  }
+  
+  // Always update the app preview with current values (custom or generated)
+  const currentOverlayText = overlayTextDisplayEl.value || promptResult.overlay_text;
+  const currentButtonText = buttonTextDisplayEl.value || promptResult.button_text;
+  updateOverlayText(currentOverlayText, currentButtonText);
 }
 
 function updateOverlayText(overlayText, buttonText) {
@@ -752,18 +1064,6 @@ function updateOverlayText(overlayText, buttonText) {
   
   if (ctaButton && buttonText) {
     ctaButton.textContent = buttonText;
-  }
-  
-  // Update the display boxes in center column
-  const overlayTextDisplay = document.getElementById('overlayTextDisplay');
-  const buttonTextDisplay = document.getElementById('buttonTextDisplay');
-  
-  if (overlayTextDisplay && overlayText) {
-    overlayTextDisplay.textContent = overlayText;
-  }
-  
-  if (buttonTextDisplay && buttonText) {
-    buttonTextDisplay.textContent = buttonText;
   }
 }
 
@@ -943,6 +1243,13 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "BUTTON_TEXT: Texto do botão call-to-action. Exemplos: 'Pagar contas', 'Indicar agora', 'Começar a usar', 'Saber mais'.",
       ],
     };
+
+    // Add custom notes to the rules if they exist
+    const customNotes = customNotesDisplayEl.value.trim();
+    if (customNotes) {
+      user.rules.push("", `INSTRUÇÕES PERSONALIZADAS DO USUÁRIO: ${customNotes}`);
+      console.log('📝 Added custom notes to prompt:', customNotes);
+    }
 
     let json;
     
