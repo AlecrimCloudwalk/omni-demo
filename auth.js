@@ -146,7 +146,7 @@ class CloudwalkAuth {
       
       // Create form elements
       const title = SecurityUtils.createElement('h3', 'Demo Mode - Cloudwalk Authentication');
-      const description = SecurityUtils.createElement('p', 'Enter your @cloudwalk.io email address:');
+      const description = SecurityUtils.createElement('p', 'Enter your authorized email address:');
       description.style.color = '#666';
       
       const input = document.createElement('input');
@@ -176,7 +176,11 @@ class CloudwalkAuth {
       
       const submit = () => {
         const email = input.value.trim();
-        if (SecurityUtils.isCloudwalkEmail(email)) {
+        const allowedEmails = ['lupape@gmail.com'];
+        const isCloudwalkEmail = SecurityUtils.isCloudwalkEmail(email);
+        const isAllowedEmail = allowedEmails.includes(email);
+        
+        if (isCloudwalkEmail || isAllowedEmail) {
           cleanup();
           resolve(email);
         } else {
@@ -209,8 +213,12 @@ class CloudwalkAuth {
   validateUserDomain(email) {
     if (!email) return false;
     
+    // List of specifically allowed emails
+    const allowedEmails = ['lupape@gmail.com'];
     const domain = email.split('@')[1];
-    const isValid = domain === this.allowedDomain;
+    const isCloudwalkEmail = domain === this.allowedDomain;
+    const isAllowedEmail = allowedEmails.includes(email);
+    const isValid = isCloudwalkEmail || isAllowedEmail;
     
     if (!isValid) {
       alert(`❌ Access Restricted\n\nThis application is only available to @${this.allowedDomain} email addresses.\n\nYour email: ${email}`);
@@ -346,8 +354,12 @@ class CloudwalkAuth {
       throw new Error('Invalid email format');
     }
     
+    const allowedEmails = ['lupape@gmail.com'];
     const emailDomain = email.split('@')[1];
-    if (emailDomain !== this.allowedDomain) {
+    const isCloudwalkEmail = emailDomain === this.allowedDomain;
+    const isAllowedEmail = allowedEmails.includes(email);
+    
+    if (!isCloudwalkEmail && !isAllowedEmail) {
       throw new Error(`❌ Access restricted to @${this.allowedDomain} emails only`);
     }
     
