@@ -494,6 +494,7 @@ function init() {
   if (enableSeedanceEl) enableSeedanceEl.addEventListener('change', () => {
     updatePricing();
     updateStartFrameVisualFeedback();
+    updateVideoOptionDependencies();
   });
   if (enableBRollEl) enableBRollEl.addEventListener('change', updatePricing);
   if (videoDuration10sEl) videoDuration10sEl.addEventListener('change', updatePricing);
@@ -505,6 +506,7 @@ function init() {
   // Initialize pricing, dependencies, and start frame feedback
   updatePricing();
   updateOptionDependencies();
+  updateVideoOptionDependencies();
   updateStartFrameVisualFeedback();
 
   // No API card hiding needed since it's removed from HTML
@@ -563,6 +565,43 @@ function updateOptionDependencies() {
           optionText.textContent = 'Remove Text from Image (Requires image generation)';
         } else {
           optionText.textContent = 'Remove Text from Image';
+        }
+      }
+    }
+  }
+}
+
+function updateVideoOptionDependencies() {
+  // B-Roll and duration extension require video generation
+  const isVideoEnabled = enableSeedanceEl && enableSeedanceEl.checked;
+  
+  // Update B-Roll option
+  if (enableBRollEl) {
+    enableBRollEl.disabled = !isVideoEnabled;
+    const brollLabel = enableBRollEl.closest('.option-toggle');
+    if (brollLabel) {
+      const optionText = brollLabel.querySelector('.option-text');
+      if (optionText) {
+        if (!isVideoEnabled) {
+          optionText.textContent = 'Add B-Roll Scene (Requires video generation)';
+        } else {
+          optionText.textContent = 'Add B-Roll Scene';
+        }
+      }
+    }
+  }
+  
+  // Update duration option
+  if (videoDuration10sEl) {
+    videoDuration10sEl.disabled = !isVideoEnabled;
+    const durationLabel = videoDuration10sEl.closest('.option-toggle');
+    if (durationLabel) {
+      const optionText = durationLabel.querySelector('.option-text');
+      if (optionText) {
+        if (!isVideoEnabled) {
+          optionText.textContent = '+5 seconds duration (Requires video generation)';
+        } else {
+          optionText.textContent = '+5 seconds duration';
         }
       }
     }
