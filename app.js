@@ -156,6 +156,7 @@ const enableSeededitEl = document.getElementById("enableSeededit");
 const useStartFrameEl = document.getElementById("useStartFrame");
 const enableSeedanceEl = document.getElementById("enableSeedance");
 const enableBRollEl = document.getElementById("enableBRoll");
+const videoDuration10sEl = document.getElementById("videoDuration10s");
 const totalPriceEl = document.getElementById("totalPrice");
 const lockCustomValuesEl = document.getElementById("lockCustomValues");
 const overlayTextDisplayEl = document.getElementById("overlayTextDisplay");
@@ -480,6 +481,7 @@ function init() {
     updateStartFrameVisualFeedback();
   });
   if (enableBRollEl) enableBRollEl.addEventListener('change', updatePricing);
+  if (videoDuration10sEl) videoDuration10sEl.addEventListener('change', updatePricing);
   if (useStartFrameEl) useStartFrameEl.addEventListener('change', () => {
     updatePricing();
     updateStartFrameVisualFeedback();
@@ -518,7 +520,8 @@ function updatePricing() {
   }
   
   if (enableSeedanceEl && enableSeedanceEl.checked) {
-    total += 0.09; // Seedance Lite 480p (5 segundos * $0.018)
+    const duration = (videoDuration10sEl && videoDuration10sEl.checked) ? 10 : 5;
+    total += duration * 0.018; // Seedance Lite 480p ($0.018 per second)
   }
   
   // B-Roll and start frame are free, no cost
@@ -639,67 +642,8 @@ function getRandomIdleAction() {
 }
 
 function getBRollText(cnae, city) {
-  const businessType = cnae ? cnae.split(' - ')[1]?.toLowerCase() : '';
-  
-  const brollScenes = {
-    'padaria': [
-      `, corta para a mesma pessoa (proprietário da padaria) amassando massa de pão na bancada da cozinha em ${city}`,
-      `, corta para a mesma pessoa preparando doces e bolos na confeitaria em ${city}`,
-      `, corta para a mesma pessoa organizando pães frescos no forno em ${city}`
-    ],
-    'farmácia': [
-      `, corta para a mesma pessoa (farmacêutico) separando medicamentos no balcão da farmácia em ${city}`,
-      `, corta para a mesma pessoa conferindo receitas médicas na farmácia em ${city}`,
-      `, corta para a mesma pessoa organizando estoque de remédios nas prateleiras em ${city}`
-    ],
-    'açougue': [
-      `, corta para a mesma pessoa (açougueiro) cortando carne fresca no balcão do açougue em ${city}`,
-      `, corta para a mesma pessoa preparando cortes especiais de carne em ${city}`,
-      `, corta para a mesma pessoa organizando produtos na câmara fria do açougue em ${city}`
-    ],
-    'marcenaria': [
-      `, corta para a mesma pessoa (marceneiro) cortando madeira com serra na oficina em ${city}`,
-      `, corta para a mesma pessoa lixando móveis na marcenaria em ${city}`,
-      `, corta para a mesma pessoa montando gavetas e dobradiças em ${city}`
-    ],
-    'barbearia': [
-      `, corta para a mesma pessoa (barbeiro) cortando cabelo de cliente na poltrona em ${city}`,
-      `, corta para a mesma pessoa fazendo barba com navalha na barbearia em ${city}`,
-      `, corta para a mesma pessoa organizando produtos de cabelo nas prateleiras em ${city}`
-    ],
-    'oficina': [
-      `, corta para a mesma pessoa (mecânico) consertando motor de carro na oficina em ${city}`,
-      `, corta para a mesma pessoa trocando óleo do veículo em ${city}`,
-      `, corta para a mesma pessoa usando ferramentas especializadas no motor em ${city}`
-    ],
-    'restaurante': [
-      `, corta para a mesma pessoa (chef) cozinhando pratos na frigideira da cozinha em ${city}`,
-      `, corta para a mesma pessoa preparando ingredientes na bancada do restaurante em ${city}`,
-      `, corta para a mesma pessoa temperando e montando pratos para servir em ${city}`
-    ],
-    'tatuagem': [
-      `, corta para a mesma pessoa (tatuador) fazendo tatuagem no braço de cliente no studio em ${city}`,
-      `, corta para a mesma pessoa preparando tintas e agulhas para tatuagem em ${city}`,
-      `, corta para a mesma pessoa desenhando design de tatuagem na mesa do studio em ${city}`
-    ],
-    'loja': [
-      `, corta para a mesma pessoa (comerciante) organizando produtos nas prateleiras da loja em ${city}`,
-      `, corta para a mesma pessoa atendendo cliente no balcão em ${city}`,
-      `, corta para a mesma pessoa arrumando vitrine e produtos em exposição em ${city}`
-    ]
-  };
-  
-  // Find matching profession with enhanced specificity
-  let scenes = brollScenes['loja']; // default
-  
-  for (const [key, value] of Object.entries(brollScenes)) {
-    if (businessType.includes(key)) {
-      scenes = value;
-      break;
-    }
-  }
-  
-  return getRandomFromArray(scenes);
+  // Let the LLM handle B-roll generation intelligently
+  return '';
 }
 
 function updatePreviewMode() {
@@ -1018,9 +962,10 @@ async function onGenerate() {
   
   // Step 3: Generate video with or without start frame
   if (enableSeedanceEl.checked) {
-    if (seedanceStatus) seedanceStatus.innerHTML = '🎬 Generating video (~1-2 min)… <img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 20px; height: 20px; vertical-align: middle;">';
+    const selectedDuration = (videoDuration10sEl && videoDuration10sEl.checked) ? 10 : 5;
+    if (seedanceStatus) seedanceStatus.innerHTML = `🎬 Generating ${selectedDuration}s video (~1-2 min)… <img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 20px; height: 20px; vertical-align: middle;">`;
     // Add loading GIF to video container
-    if (seedanceContainer) seedanceContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; flex-direction: column;"><img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 80px; height: 80px;"><p style="margin-top: 10px; color: #a8a8ad; font-size: 14px;">Generating video...</p></div>';
+    if (seedanceContainer) seedanceContainer.innerHTML = `<div style="display: flex; justify-content: center; align-items: center; height: 200px; flex-direction: column;"><img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 80px; height: 80px;"><p style="margin-top: 10px; color: #a8a8ad; font-size: 14px;">Generating ${selectedDuration}s video...</p></div>`;
     
     // Use start frame: prefer edited image, fallback to original image
     let startFrameUrl = null;
@@ -1183,15 +1128,8 @@ async function callOpenAIForPrompts(profile) {
     
     // Check if B-Roll is enabled
     const isBRollEnabled = enableBRollEl && enableBRollEl.checked;
-    const brollText = isBRollEnabled ? getBRollText(profile.cnae, profile.city) : '';
-    
-    // Ensure brollText is always a string
-    const safeBRollText = brollText || '';
     
     console.log('🎬 B-Roll enabled:', isBRollEnabled);
-    if (isBRollEnabled) {
-      console.log('🎬 B-Roll text:', safeBRollText);
-    }
     
     const system = `Você é um roteirista e especialista em criação de prompts descritivos para geração de imagens e vídeos realistas em estilo POV (primeira pessoa) e selfie vlog com ultra realismo, 4K, coerência narrativa.
 
@@ -1227,42 +1165,63 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `HORÁRIOS: Use preferencialmente '${randomTimeOfDay}' ou horários naturais similares como 'Seis horas da manhã', 'Final de tarde', 'Início da manhã'`,
         "AMBIENTES EXTERNOS: Para atividades ao ar livre, use pontos turísticos da cidade (Cristo Redentor-RJ, Elevador Lacerda-Salvador, Avenida Paulista-SP, Pelourinho-Salvador, Pão de Açúcar-RJ, etc.)",
         `ETNIA OBRIGATÓRIA: Use sempre '${randomEthnicity}' para garantir diversidade racial brasileira`,
-        `CIDADE OBRIGATÓRIA: Use sempre '${profile.city}' (SEM região) - NUNCA use outras cidades como Rio, São Paulo, Salvador, etc.`,
+        `CIDADE OBRIGATÓRIA: Use sempre '${profile.city}' (SEM região) - NUNCA use outras cidades.`,
         `CNAE DO CLIENTE: ${profile.cnae || 'negócio genérico'} - USE O TIPO ESPECÍFICO DE NEGÓCIO (loja de instrumentos musicais, marcenaria, restaurante, etc.)`,
         `GÊNERO E PROFISSÃO: Analise o nome "${profile.ownerName}" para determinar gênero e combine com CNAE "${profile.cnae}" para criar título profissional apropriado:`,
         `Exemplos: "uma dentista", "um açougueiro", "uma tatuadora", "um mecânico", "uma farmacêutica", "um advogado", etc.`,
         `Para negócios sem profissão específica, use "um empresário" ou "uma empresária".`,
         `IMPORTANTE: NÃO descreva aparência física (barba, cabelo, idade específica). Use apenas [título profissional] + [etnia] + [cidade].`,
-        `CONTEXTO PROFISSIONAL: Adicione sutilmente roupa e localização apropriadas para a profissão (ex: "jaleco branco", "uniforme de trabalho", "terno", "avental"). Para localização, varie entre "interior" ou "exterior" conforme apropriado para a profissão.`,
-        `CONTEXTO DE NEGÓCIO: Para loja de instrumentos musicais, inclua elementos como "violões ao fundo", "teclados expostos", "ambiente musical". Para outros negócios, use elementos específicos do ramo.`,
+        `CONTEXTO PROFISSIONAL: Determine roupa e localização apropriadas para a profissão baseado no CNAE. Exemplos:`,
+        `- Farmácia: jaleco branco, interior com prateleiras de medicamentos`,
+        `- Tatuagem: roupa preta, interior com cadeiras de tatuagem e arte nas paredes`,
+        `- Marcenaria: uniforme de trabalho, interior com madeiras e ferramentas`,
+        `- Padaria: avental, interior com fornos e pães expostos`,
+        `- Oficina: macacão, interior com carros e ferramentas`,
+        `- Restaurante: uniforme de chef, interior de cozinha ou salão`,
+        `- Barbearia: avental, interior com poltronas e espelhos`,
+        `- Instrumento musical: roupa casual, interior com violões e instrumentos expostos`,
         "",
         "ESTRUTURA PARA IMAGE_PROMPT:",
-        `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], interior/exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, descrição cinematográfica, sem letreiros visíveis'`,
-        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}.'`,
+        "1. HORÁRIO + AMBIENTAÇÃO: Use o horário, tipo de negócio e cidade fornecidos. Interior/exterior baseado na profissão.",
+        "2. PERSONAGEM: Determine gênero pelo nome, crie título profissional baseado no CNAE, use etnia e cidade fornecidas.",
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
         "",
         "ESTRUTURA PARA VIDEO_PROMPT:",  
-        `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], mesmo ambiente da imagem na ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}'`,
-        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}.'`,
+        "1. HORÁRIO + AMBIENTAÇÃO: Mesmo ambiente da imagem, usando dados fornecidos.",
+        "2. PERSONAGEM: Mesmo personagem da imagem, com ação idle apropriada.",
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
-        `4. B-ROLL: '${safeBRollText}'`,
+        `4. B-ROLL ${isBRollEnabled ? '(OBRIGATÓRIO)' : '(DESABILITADO)'}: ${isBRollEnabled ? 'Adicione cena mostrando a MESMA PESSOA fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real.' : 'Não incluir B-roll.'}`,
         "",
-        `Exemplo de estrutura (USE OS DADOS EXATOS DO PERFIL):`,
-        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.${safeBRollText}'`,
+        `EXEMPLOS DE ESTRUTURA (adapte para o perfil específico):`,
+        `IMAGE EXEMPLO: 'Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
+        `VIDEO EXEMPLO: 'Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Corta para a mesma pessoa fazendo tatuagem em braço de cliente.'`,
+        "",
+        isBRollEnabled ? "EXEMPLOS DE B-ROLL POR PROFISSÃO:" : "",
+        isBRollEnabled ? "- Tatuador: 'corta para a mesma pessoa fazendo tatuagem no braço de cliente'" : "",
+        isBRollEnabled ? "- Padeiro: 'corta para a mesma pessoa amassando massa de pão'" : "",
+        isBRollEnabled ? "- Mecânico: 'corta para a mesma pessoa consertando motor de carro'" : "",
+        isBRollEnabled ? "- Jardineiro: 'corta para a mesma pessoa aparando plantas em jardim público de [cidade]'" : "",
+        isBRollEnabled ? "- Construção: 'corta para a mesma pessoa operando equipamento em obra de [cidade]'" : "",
         "",
         "",
-        "INSTRUÇÕES CRÍTICAS FINAIS:",
-        `- OBRIGATÓRIO usar "${profile.city}" (SEM região, não outras cidades)`,
-        `- OBRIGATÓRIO usar tipo específico do CNAE: "${profile.cnae}" (não "loja genérica")`,
-        `- OBRIGATÓRIO analisar o nome "${profile.ownerName}" para determinar o gênero`,
-        `- OBRIGATÓRIO usar horário "${randomTimeOfDay}"`,
-        `- OBRIGATÓRIO criar overlay_text baseado em "${profile.productCallout}" (não usar exemplos genéricos)`,
+        "DADOS DO PERFIL PARA USAR:",
+        `- Cidade: "${profile.city}" (usar exatamente esta cidade, sem região)`,
+        `- CNAE/Negócio: "${profile.cnae}" (determinar tipo específico de negócio)`,
+        `- Nome do proprietário: "${profile.ownerName}" (analisar para determinar gênero)`,
+        `- Horário: "${randomTimeOfDay}" (usar este horário específico)`,
+        `- Etnia: "${randomEthnicity}" (usar esta etnia específica)`,
+        `- Ação idle: "${randomIdleAction}" (usar esta ação específica)`,
+        `- Produto/Serviço: "${profile.productCallout}" (usar para overlay_text)`,
         "",
-        "RETORNE JSON com 'image_prompt', 'video_prompt', 'overlay_text' (máximo 15 chars) e 'button_text' (máximo 12 chars) seguindo essas estruturas exatas.",
+        "INSTRUÇÕES FINAIS:",
+        "- Use os dados do perfil acima para criar prompts únicos e específicos",
+        "- Adapte os exemplos ao contexto real do negócio",
+        "- Seja criativo mas mantenha realismo e coerência",
+        "- Garanta que image_prompt e video_prompt sejam consistentes entre si",
         "",
-        `OVERLAY_TEXT: OBRIGATÓRIO 2 linhas exatas separadas por \\n baseado no produto "${profile.productCallout}". Se for "JIM assistente virtual no app", use algo como "Assistente Virtual\\nInteligente" ou "Gestão Automatizada\\ncom IA". Máximo 15 caracteres por linha.`,
-        "BUTTON_TEXT: Texto do botão call-to-action. Exemplos: 'Pagar contas', 'Indicar agora', 'Começar a usar', 'Saber mais'.",
+        "RETORNE JSON com 'image_prompt', 'video_prompt', 'overlay_text' e 'button_text':",
+        `- overlay_text: 2 linhas (máx 15 chars cada) baseado em "${profile.productCallout}"`,
+        "- button_text: Call-to-action (máx 12 chars). Exemplos: 'Começar', 'Saber mais', 'Testar'",
       ],
     };
 
@@ -1351,23 +1310,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
 
     // Let LLM determine gender and profession - much smarter than hardcoded regex
 
-    // Ensure we have both prompts with correct structure
-    if (!json.image_prompt) {
-      const city = profile.city || 'Brasil';
-      const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
-      const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
-      // Let LLM handle gender and profession determination based on name and CNAE
-      json.image_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}, ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
-    }
-    
-    if (!json.video_prompt) {
-      const city = profile.city || 'sua cidade';
-      const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
-      const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
-      
-      // Let LLM handle gender and profession determination based on name and CNAE
-      json.video_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}, ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.${safeBRollText}`;
-    }
+    // Trust the LLM to generate both prompts based on the comprehensive instructions
     
     // Add default overlay and button text if not provided
     console.log('🔍 Checking overlay/button text from OpenAI:');
@@ -1387,26 +1330,10 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     console.log('  - overlay_text:', json.overlay_text);
     console.log('  - button_text:', json.button_text);
     
-    // Apply pronunciation improvements to video_prompt only
-    if (json.video_prompt) {
-      json.video_prompt = json.video_prompt
-        .replace(/\bJIM\b/g, 'Din')
-        .replace(/\bInfinitePay\b/g, 'Infinitipêi');
-    }
-    
-    // Set default voice metadata  
-    json.voice_metadata = {
-      text: `Com ${profile.productCallout || 'o Dinn'}, consigo entender melhor as vendas e facilitar os pagamentos digitais para os meus clientes!`,
-      voice_id: 'Wise_Woman',
-      emotion: 'happy',
-      speed: 1.5,
-      pitch: 0,
-      language_boost: 'Portuguese',
-      english_normalization: false
-    };
+
     
     // Debug log to see what OpenAI returned
-    console.log('OpenAI returned voice_metadata:', json.voice_metadata);
+    console.log('OpenAI response processed successfully');
     return json;
   } catch (e) {
     console.error(e);
@@ -1778,11 +1705,14 @@ async function generateSeedanceVideo(videoPrompt, startFrameUrl = null) {
         const videoSeed = generateSeedVariation(window.currentMasterSeed || generateBetterRandomSeed(), 3);
         console.log(`🎬 Video Seed: ${videoSeed} (Master: ${window.currentMasterSeed})`);
 
+        const videoDuration = (videoDuration10sEl && videoDuration10sEl.checked) ? 10 : 5;
+        console.log(`🎬 Video Duration: ${videoDuration} seconds`);
+
         const body = {
           model: 'bytedance/seedance-1-lite',
           input: {
             prompt: videoPrompt,
-            duration: 5,
+            duration: videoDuration,
             resolution: "480p",
             aspect_ratio: "16:9",
             fps: 24,
@@ -1866,9 +1796,12 @@ async function generateSeedanceVideo(videoPrompt, startFrameUrl = null) {
     } else {
        // Use serverless function (Vercel/local)
        const endpoint = `${API_BASE}/replicate/seedance`;
+       const videoDuration = (videoDuration10sEl && videoDuration10sEl.checked) ? 10 : 5;
+       console.log(`🎬 Video Duration (serverless): ${videoDuration} seconds`);
+       
        const requestBody = { 
          prompt: videoPrompt,
-         duration: 5,
+         duration: videoDuration,
          resolution: "480p",
          aspect_ratio: "16:9",
          fps: 24,
