@@ -89,9 +89,13 @@ serve(async (req) => {
       )
     }
 
-    // Check if user email is from @cloudwalk.io domain
-    if (!user.email?.endsWith('@cloudwalk.io')) {
-      console.error('Access denied - not a Cloudwalk email:', user.email)
+    // Check if user email is from @cloudwalk.io domain or specifically allowed
+    const allowedEmails = ['lupape@gmail.com']
+    const isCloudwalkEmail = user.email?.endsWith('@cloudwalk.io')
+    const isAllowedEmail = allowedEmails.includes(user.email || '')
+    
+    if (!isCloudwalkEmail && !isAllowedEmail) {
+      console.error('Access denied - not authorized email:', user.email)
       return new Response(
         JSON.stringify({ error: 'Access denied - Cloudwalk employees only' }), 
         { 
