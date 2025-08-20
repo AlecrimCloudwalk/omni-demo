@@ -1406,11 +1406,12 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     
     if (!json.overlay_text) {
       console.log('⚠️ No overlay_text from OpenAI, using fallback');
-      const productLines = profile.productCallout.split(' ');
+      const productCallout = profile.productCallout || "Gestão digital";
+      const productLines = productCallout.split(' ');
       if (productLines.length >= 2) {
         json.overlay_text = `${productLines[0]}\n${productLines.slice(1).join(' ')}`;
       } else {
-        json.overlay_text = `${profile.productCallout}\nAqui`;
+        json.overlay_text = `${productCallout}\nAqui`;
       }
     }
     if (!json.button_text) {
