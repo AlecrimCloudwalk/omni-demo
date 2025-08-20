@@ -91,7 +91,7 @@
           <label class="option-toggle">
             <input id="enableSeedance" type="checkbox" checked>
             <span class="checkmark"></span>
-            <span class="option-text">Generate Video (Seedance Lite 5s)</span>
+            <span class="option-text">Generate Video</span>
             <span class="option-price">$0.09</span>
           </label>
           <label class="option-toggle">
@@ -103,7 +103,7 @@
           <label class="option-toggle">
             <input id="videoDuration10s" type="checkbox">
             <span class="checkmark"></span>
-            <span class="option-text">10 Second Video (vs 5s)</span>
+            <span class="option-text">+5 seconds duration</span>
             <span class="option-price">+$0.09</span>
           </label>
         </div>
@@ -209,25 +209,21 @@
       <div class="generated-texts">
         <h3>Content Settings</h3>
         <div class="text-results">
-          <div class="overlay-text-result">
-            <label>Overlay Text: <small>(editable)</small></label>
-            <textarea id="overlayTextDisplay" placeholder="Generated overlay text will appear here..." rows="2" maxlength="30"></textarea>
-            <div class="text-hint">Max 30 chars, use \n for line breaks</div>
-          </div>
-          <div class="button-text-result">
-            <label>Button Text: <small>(editable)</small></label>
-            <input type="text" id="buttonTextDisplay" placeholder="Generated button text will appear here..." maxlength="15">
-            <div class="text-hint">Max 15 chars</div>
-          </div>
           <div class="product-callout-result">
             <label>Key Message: <small>(what to promote)</small></label>
             <input type="text" id="productCallout" value="JIM assistente virtual no app" placeholder="What product or service should be mentioned in the video" maxlength="50">
-            <div class="text-hint">Product or service to highlight in the content</div>
+          </div>
+          <div class="overlay-text-result">
+            <label>Overlay Text: <small>(editable)</small></label>
+            <textarea id="overlayTextDisplay" placeholder="Generated overlay text will appear here... (Max 30 chars, use \n for line breaks)" rows="2" maxlength="30"></textarea>
+          </div>
+          <div class="button-text-result">
+            <label>Button Text: <small>(editable)</small></label>
+            <input type="text" id="buttonTextDisplay" placeholder="Generated button text will appear here... (Max 15 chars)" maxlength="15">
           </div>
           <div class="custom-notes-result">
             <label>Custom Notes: <small>(optional)</small></label>
-            <textarea id="customNotesDisplay" placeholder="Add custom instructions for AI generation (e.g., 'make it more energetic', 'focus on family business', 'include local landmarks')..." rows="3" maxlength="200"></textarea>
-            <div class="text-hint">Max 200 chars - will be added to all AI prompts</div>
+            <textarea id="customNotesDisplay" placeholder="Add custom instructions for AI generation (e.g., 'make it more energetic', 'focus on family business', 'include local landmarks')... (Max 200 chars - will be added to all AI prompts)" rows="3" maxlength="200"></textarea>
           </div>
         </div>
       </div>

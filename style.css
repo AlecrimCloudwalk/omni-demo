@@ -330,6 +330,7 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
 .action-buttons {
   display: flex;
   justify-content: center;
+  margin-top: 24px;
 }
 
 .generate-btn {
@@ -444,7 +445,9 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
 .shuffle-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 12px;
+  justify-content: flex-start;
 }
 
 .shuffle-controls .shuffle-btn {
@@ -879,14 +882,10 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   font-style: italic;
   font-weight: 400;
   opacity: 0.8;
+  font-size: 11px;
 }
 
-.text-hint {
-  font-size: 9px;
-  color: var(--muted);
-  margin-top: 4px;
-  font-style: italic;
-}
+/* Text hint styles removed - now integrated into placeholder text */
 
 .overlay-text-result label small,
 .button-text-result label small,
