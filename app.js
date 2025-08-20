@@ -120,14 +120,14 @@ const GENDER_BY_CNAE = {
 // Ações idle para primeira cena (usando mão não-dominante pois a dominante segura câmera)
 const IDLE_ACTIONS = [
   "pose de herói olhando para câmera com confiança",
-  "dando tchau para câmera com mão direita e sorriso caloroso",
-  "mostrando sua loja com gesto de orgulho usando mão direita",
-  "apontando para baixo na direita com mão direita incentivando o click",
+  "dando tchau para câmera com a outra mão e sorriso caloroso",
+  "mostrando sua loja com gesto de orgulho usando a outra mão",
+  "apontando para baixo na direita com a outra mão incentivando o click",
   "pose de empresário bem-sucedido sorrindo",
-  "fazendo sinal de positivo com polegar direita para cima",
-  "acenando animado para a câmera com mão direita",
-  "pose de boas-vindas com braço direita aberto",
-  "sorrindo e apontando para o ambiente de trabalho com mão direita",
+  "fazendo sinal de positivo com a outra mão",
+  "acenando animado para a câmera com a outra mão",
+  "pose de boas-vindas com o outro braço",
+  "sorrindo e apontando para o ambiente de trabalho com a outra mão",
   "pose confiante de quem domina o negócio"
 ];
 
@@ -1263,9 +1263,9 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `EXEMPLOS DE ESTRUTURA (adapte para o perfil específico):`,
         `IMAGE EXEMPLO: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Ao fundo, fornos e pães expostos.'`,
         ...(isBRollEnabled ? [
-          `VIDEO EXEMPLO COM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Primeira cena: Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com mão direita. Ao fundo, cadeiras de tatuagem e arte nas paredes. Corta para segunda cena: A mesma pessoa fazendo tatuagem no braço de cliente.'`
+          `VIDEO EXEMPLO COM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Primeira cena: Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com a outra mão. Ao fundo, cadeiras de tatuagem e arte nas paredes. Corta para segunda cena: A mesma pessoa fazendo tatuagem no braço de cliente.'`
         ] : [
-          `VIDEO EXEMPLO SEM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com mão direita. Ao fundo, cadeiras de tatuagem e arte nas paredes.'`
+          `VIDEO EXEMPLO SEM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com a outra mão. Ao fundo, cadeiras de tatuagem e arte nas paredes.'`
         ]),
         "",
         ...(isBRollEnabled ? [
@@ -1325,7 +1325,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o',
             messages: [
               {
                 role: 'system',
