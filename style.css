@@ -274,14 +274,7 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   color: var(--text);
 }
 
-/* Start Frame Visual Feedback Styles */
-
-
-.option-toggle.start-frame-active {
-  border-color: var(--purple);
-  background: rgba(200, 126, 247, 0.1);
-  box-shadow: 0 0 0 1px rgba(200, 126, 247, 0.3);
-}
+/* Start Frame Visual Feedback Styles removed as requested */
 
 .option-toggle input[type="checkbox"]:disabled + .checkmark {
   background: #2a2b2f;
@@ -885,7 +878,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 .text-hint {
-  font-size: 11px;
+  font-size: 9px;
   color: var(--muted);
   margin-top: 4px;
   font-style: italic;
@@ -912,7 +905,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 .custom-notes-result textarea {
-  min-height: 60px;
+  min-height: 80px;
 }
 
 .custom-notes-result label small {

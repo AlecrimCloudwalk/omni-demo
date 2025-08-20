@@ -643,48 +643,53 @@ function getBRollText(cnae, city) {
   
   const brollScenes = {
     'padaria': [
-      `, corta a cena para o padeiro fazendo pão dentro da padaria em ${city}`,
-      `, corta para a cena do proprietário da padaria preparando doces em ${city}`,
-      `, corta para o comerciante arrumando vitrine de pães em ${city}`
+      `, corta para a mesma pessoa (proprietário da padaria) amassando massa de pão na bancada da cozinha em ${city}`,
+      `, corta para a mesma pessoa preparando doces e bolos na confeitaria em ${city}`,
+      `, corta para a mesma pessoa organizando pães frescos no forno em ${city}`
     ],
     'farmácia': [
-      `, corta para o farmacêutico organizando medicamentos na farmácia em ${city}`,
-      `, corta para o proprietário atendendo cliente na farmácia em ${city}`,
-      `, corta para cena do farmacêutico conferindo estoque em ${city}`
+      `, corta para a mesma pessoa (farmacêutico) separando medicamentos no balcão da farmácia em ${city}`,
+      `, corta para a mesma pessoa conferindo receitas médicas na farmácia em ${city}`,
+      `, corta para a mesma pessoa organizando estoque de remédios nas prateleiras em ${city}`
     ],
     'açougue': [
-      `, corta para o açougueiro preparando carnes no açougue em ${city}`,
-      `, corta para o proprietário cortando carne fresca em ${city}`,
-      `, corta para cena do comerciante organizando produtos no açougue em ${city}`
+      `, corta para a mesma pessoa (açougueiro) cortando carne fresca no balcão do açougue em ${city}`,
+      `, corta para a mesma pessoa preparando cortes especiais de carne em ${city}`,
+      `, corta para a mesma pessoa organizando produtos na câmara fria do açougue em ${city}`
     ],
     'marcenaria': [
-      `, corta para o marceneiro trabalhando com madeira na oficina em ${city}`,
-      `, corta para o artesão criando móveis na marcenaria em ${city}`,
-      `, corta para cena do proprietário usando ferramentas em ${city}`
+      `, corta para a mesma pessoa (marceneiro) cortando madeira com serra na oficina em ${city}`,
+      `, corta para a mesma pessoa lixando móveis na marcenaria em ${city}`,
+      `, corta para a mesma pessoa montando gavetas e dobradiças em ${city}`
     ],
     'barbearia': [
-      `, corta para o barbeiro cortando cabelo na barbearia em ${city}`,
-      `, corta para o profissional fazendo barba de cliente em ${city}`,
-      `, corta para cena do proprietário organizando produtos da barbearia em ${city}`
+      `, corta para a mesma pessoa (barbeiro) cortando cabelo de cliente na poltrona em ${city}`,
+      `, corta para a mesma pessoa fazendo barba com navalha na barbearia em ${city}`,
+      `, corta para a mesma pessoa organizando produtos de cabelo nas prateleiras em ${city}`
     ],
     'oficina': [
-      `, corta para o mecânico trabalhando em carro na oficina em ${city}`,
-      `, corta para o proprietário consertando motor em ${city}`,
-      `, corta para cena do profissional usando ferramentas na oficina em ${city}`
+      `, corta para a mesma pessoa (mecânico) consertando motor de carro na oficina em ${city}`,
+      `, corta para a mesma pessoa trocando óleo do veículo em ${city}`,
+      `, corta para a mesma pessoa usando ferramentas especializadas no motor em ${city}`
     ],
     'restaurante': [
-      `, corta para o chef preparando pratos na cozinha em ${city}`,
-      `, corta para o proprietário cozinhando no restaurante em ${city}`,
-      `, corta para cena do comerciante servindo clientes em ${city}`
+      `, corta para a mesma pessoa (chef) cozinhando pratos na frigideira da cozinha em ${city}`,
+      `, corta para a mesma pessoa preparando ingredientes na bancada do restaurante em ${city}`,
+      `, corta para a mesma pessoa temperando e montando pratos para servir em ${city}`
+    ],
+    'tatuagem': [
+      `, corta para a mesma pessoa (tatuador) fazendo tatuagem no braço de cliente no studio em ${city}`,
+      `, corta para a mesma pessoa preparando tintas e agulhas para tatuagem em ${city}`,
+      `, corta para a mesma pessoa desenhando design de tatuagem na mesa do studio em ${city}`
     ],
     'loja': [
-      `, corta para o comerciante organizando produtos na loja em ${city}`,
-      `, corta para o proprietário atendendo clientes na loja em ${city}`,
-      `, corta para cena do empresário arrumando vitrine em ${city}`
+      `, corta para a mesma pessoa (comerciante) organizando produtos nas prateleiras da loja em ${city}`,
+      `, corta para a mesma pessoa atendendo cliente no balcão em ${city}`,
+      `, corta para a mesma pessoa arrumando vitrine e produtos em exposição em ${city}`
     ]
   };
   
-  // Find matching profession
+  // Find matching profession with enhanced specificity
   let scenes = brollScenes['loja']; // default
   
   for (const [key, value] of Object.entries(brollScenes)) {
@@ -808,8 +813,6 @@ function updateStartFrameVisualFeedback() {
   if (optionText) {
     if (!isVideoEnabled) {
       optionText.textContent = 'Use Image as Start Frame (Video disabled)';
-    } else if (isStartFrameChecked) {
-      optionText.textContent = 'Use Image as Start Frame (if available)';
     } else {
       optionText.textContent = 'Use Image as Start Frame';
     }
@@ -1170,74 +1173,8 @@ async function callOpenAIForPrompts(profile) {
     const timesOfDay = ['Amanhecer', 'Meio-dia ensolarado', 'Final de tarde', 'Anoitecer', 'Noite'];
     const randomTimeOfDay = timesOfDay[Math.floor(Math.random() * timesOfDay.length)];
     
-    // Create business-specific video messages based on CNAE
-    function getBusinessSpecificMessage(cnae, city, product) {
-      const businessType = cnae ? cnae.split(' - ')[1]?.toLowerCase() : '';
-      
-      if (businessType.includes('instrumento') || businessType.includes('música')) {
-        return [
-          `Iaí pessoal! Aqui na minha loja de instrumentos em ${city}, ${product} organizou todo meu estoque! Agora sei exatamente qual violão tenho!`,
-          `E aí galera! ${product} revolucionou minha loja de música em ${city}! Agora controlo vendas de guitarra, bateria, tudo!`,
-          `Opa! Todo mundo que tem loja de instrumentos em ${city} precisa conhecer ${product}! Facilita demais!`
-        ];
-      } else if (businessType.includes('padaria')) {
-        return [
-          `Bom dia! ${product} transformou minha padaria em ${city}! Agora controlo pães, doces, tudo digitalizado!`,
-          `E aí pessoal! Desde que uso ${product} na padaria em ${city}, nunca mais perdi controle do estoque!`
-        ];
-      } else if (businessType.includes('farmácia')) {
-        return [
-          `Oi gente! ${product} organizou toda minha farmácia em ${city}! Controle de remédios nunca foi tão fácil!`,
-          `E aí! ${product} é essencial pra quem tem farmácia em ${city}! Gestão completa de medicamentos!`
-        ];
-      } else if (businessType.includes('açougue')) {
-        return [
-          `E aí pessoal! ${product} revolucionou meu açougue em ${city}! Agora controlo estoque de carnes, validade, tudo!`,
-          `Beleza galera! Com ${product}, meu açougue em ${city} nunca mais perdeu produto por vencimento!`
-        ];
-      } else if (businessType.includes('tatuagem')) {
-        return [
-          `Salve! ${product} organizou meu studio de tatuagem em ${city}! Agendamentos, materiais, tudo no controle!`,
-          `E aí! Todo tatuador de ${city} precisa conhecer ${product}! Gestão completa do studio!`
-        ];
-      } else if (businessType.includes('oficina') || businessType.includes('mecânica')) {
-        return [
-          `E aí galera! ${product} transformou minha oficina em ${city}! Controlo peças, serviços, orçamentos, tudo!`,
-          `Opa! Todo mecânico de ${city} deveria usar ${product}! Organização total da oficina!`
-        ];
-      } else if (businessType.includes('marcenaria')) {
-        return [
-          `Beleza pessoal! ${product} organizou minha marcenaria em ${city}! Projetos, madeiras, ferramentas, tudo controlado!`,
-          `E aí! ${product} é essencial pra marceneiro em ${city}! Gestão completa dos projetos!`
-        ];
-      } else if (businessType.includes('barbearia')) {
-        return [
-          `Salve galera! ${product} revolucionou minha barbearia em ${city}! Agendamentos, produtos, tudo organizado!`,
-          `E aí! Todo barbeiro de ${city} precisa conhecer ${product}! Gestão completa do negócio!`
-        ];
-      } else if (businessType.includes('confeitaria')) {
-        return [
-          `Oi pessoal! ${product} transformou minha confeitaria em ${city}! Controlo doces, bolos, encomendas, tudo!`,
-          `Beleza! Com ${product}, minha confeitaria em ${city} nunca mais perdeu uma encomenda!`
-        ];
-      } else if (businessType.includes('veterinária')) {
-        return [
-          `E aí! ${product} organizou minha clínica veterinária em ${city}! Prontuários, medicamentos, tudo digitalizado!`,
-          `Opa! Todo veterinário de ${city} deveria usar ${product}! Cuidado animal de qualidade!`
-        ];
-      } else {
-        // Generic business messages
-        return [
-          `Iaí pessoal! Aqui em ${city}, ${product} triplicou meu faturamento! Negócio que era difícil ficou super fácil!`,
-          `Bom dia galera! ${product} mudou tudo aqui em ${city}! Agora consigo focar no que realmente importa: crescer!`,
-          `E aí! Desde que comecei a usar ${product} em ${city}, meus clientes ficaram impressionados com a praticidade!`,
-          `Oi gente! ${product} é o futuro dos negócios aqui em ${city}! Quem não usar vai ficar pra trás!`
-        ];
-      }
-    }
+
     
-    const businessMessages = getBusinessSpecificMessage(profile.cnae, profile.city, profile.productCallout || 'o Dinn');
-    const randomVideoText = businessMessages[Math.floor(Math.random() * businessMessages.length)];
     console.log('🌅 Horário randomizado:', randomTimeOfDay); // Debug
     
     const randomEthnicity = getRandomEthnicity();
@@ -1308,11 +1245,11 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], mesmo ambiente da imagem na ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}'`,
         `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}.'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
-        `4. FALA: 'fala da pessoa: "${randomVideoText}"${safeBRollText}'`,
+        `4. B-ROLL: '${safeBRollText}'`,
         "",
         `Exemplo de estrutura (USE OS DADOS EXATOS DO PERFIL):`,
         `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText}"${safeBRollText}'`,
+        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.${safeBRollText}'`,
         "",
         "",
         "INSTRUÇÕES CRÍTICAS FINAIS:",
@@ -1425,26 +1362,11 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     
     if (!json.video_prompt) {
       const city = profile.city || 'sua cidade';
-      const product = profile.productCallout || 'o Dinn';
       const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
       const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
       
-      // Use business-specific message
-      let fallbackMessage;
-      if (businessType.includes('instrumento') || businessType.includes('música')) {
-        fallbackMessage = `Iaí pessoal! Aqui na minha loja de instrumentos em ${city}, ${product} organizou todo meu estoque! Agora sei exatamente qual violão tenho!`;
-      } else if (businessType.includes('padaria')) {
-        fallbackMessage = `Bom dia! ${product} transformou minha padaria em ${city}! Agora controlo pães, doces, tudo digitalizado!`;
-      } else if (businessType.includes('farmácia')) {
-        fallbackMessage = `Oi gente! ${product} organizou toda minha farmácia em ${city}! Controle de remédios nunca foi tão fácil!`;
-      } else {
-        fallbackMessage = `Iaí pessoal! Aqui em ${city}, ${product} triplicou meu faturamento! Negócio que era difícil ficou super fácil!`;
-      }
-      
       // Let LLM handle gender and profession determination based on name and CNAE
-      json.video_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}, ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
-
-fala da pessoa: "${fallbackMessage}"${safeBRollText}`;
+      json.video_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}, ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.${safeBRollText}`;
     }
     
     // Add default overlay and button text if not provided
