@@ -160,8 +160,8 @@ serve(async (req) => {
       const predictionId = responseData.id
       console.log('🔄 Polling for prediction completion:', predictionId)
       
-      // Poll every 2 seconds for up to 2 minutes
-      for (let i = 0; i < 60; i++) {
+      // Poll every 2 seconds for up to 4 minutes (video generation can take longer)
+      for (let i = 0; i < 120; i++) {
         await new Promise(resolve => setTimeout(resolve, 2000))
         
         const pollResponse = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
@@ -171,7 +171,7 @@ serve(async (req) => {
         })
         
         const pollData = await pollResponse.json()
-        console.log(`⏳ Poll ${i + 1}/60 - Status: ${pollData.status}`)
+        console.log(`⏳ Poll ${i + 1}/120 - Status: ${pollData.status}`)
         
         if (pollData.status === 'succeeded') {
           console.log('✅ Prediction completed successfully')
@@ -194,8 +194,8 @@ serve(async (req) => {
         }
       }
       
-      // Timeout after 2 minutes
-      console.error('⏰ Prediction timed out after 2 minutes')
+      // Timeout after 4 minutes  
+      console.error('⏰ Prediction timed out after 4 minutes')
       return new Response(
         JSON.stringify({ error: 'Prediction timed out' }), 
         { 
