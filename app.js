@@ -158,7 +158,7 @@ const enableSeedanceEl = document.getElementById("enableSeedance");
 const enableBRollEl = document.getElementById("enableBRoll");
 const videoDuration10sEl = document.getElementById("videoDuration10s");
 const totalPriceEl = document.getElementById("totalPrice");
-const lockCustomValuesEl = document.getElementById("lockCustomValues");
+const lockBtn = document.getElementById("lockBtn");
 const overlayTextDisplayEl = document.getElementById("overlayTextDisplay");
 const buttonTextDisplayEl = document.getElementById("buttonTextDisplay");
 const customNotesDisplayEl = document.getElementById("customNotesDisplay");
@@ -178,7 +178,7 @@ console.log('  - seededitContainer:', !!seededitContainer);
 console.log('  - seedanceContainer:', !!seedanceContainer);
 console.log('  - videoOverlay:', !!videoOverlay);
 console.log('  - shuffleBtn:', !!shuffleBtn);
-console.log('  - lockCustomValuesEl:', !!lockCustomValuesEl);
+console.log('  - lockBtn:', !!lockBtn);
 console.log('  - videoDuration10sEl:', !!videoDuration10sEl);
 console.log('  - productCalloutEl:', !!productCalloutEl);
 const imagePromptEl = document.getElementById("imagePrompt");
@@ -197,6 +197,9 @@ let hasCustomOverlayText = false;
 let hasCustomButtonText = false;
 let hasCustomNotes = false;
 let originalFormData = {};
+
+// Lock state for custom values
+let isLocked = false;
 
 // CNAE Search Functions
 function initCnaeSearch() {
@@ -479,6 +482,16 @@ function init() {
 
   shuffleBtn.addEventListener("click", onShuffle);
   generateBtn.addEventListener("click", onGenerate);
+  
+  // Lock button functionality
+  if (lockBtn) {
+    lockBtn.addEventListener('click', () => {
+      isLocked = !isLocked;
+      lockBtn.textContent = isLocked ? '🔒' : '🔓';
+      lockBtn.classList.toggle('locked', isLocked);
+      shuffleBtn.disabled = isLocked;
+    });
+  }
 
   // Preview mode switching
   previewImageRadio.addEventListener("change", updatePreviewMode);
@@ -883,7 +896,7 @@ async function onShuffle() {
     const randomTime = timesOfDay[Math.floor(Math.random() * timesOfDay.length)];
     
     // Check if we should preserve custom values
-    const shouldLockCustom = lockCustomValuesEl.checked;
+    const shouldLockCustom = isLocked;
     fillForm(sample, shouldLockCustom);
     
     // Store random time for prompt generation
@@ -1294,8 +1307,8 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "- Garanta que image_prompt e video_prompt sejam consistentes entre si",
         "",
         "RETORNE JSON com 'image_prompt', 'video_prompt', 'overlay_text' e 'button_text':",
-        `- overlay_text: 2 linhas (máx 15 chars cada) relacionado ao tipo de negócio "${profile.cnae}"`,
-        "- button_text: Call-to-action (máx 12 chars). Exemplos: 'Começar', 'Saber mais', 'Testar'",
+        `- overlay_text: 2 linhas (máx 15 chars cada) promovendo "${profile.productCallout}" para o negócio ${profile.cnae}`,
+        `- button_text: Call-to-action (máx 12 chars) relacionado a "${profile.productCallout}". Exemplos: 'Começar', 'Saber mais', 'Testar'`,
       ],
     };
 
@@ -1393,7 +1406,12 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     
     if (!json.overlay_text) {
       console.log('⚠️ No overlay_text from OpenAI, using fallback');
-      json.overlay_text = "Seu Negócio\nDigital";
+      const productLines = profile.productCallout.split(' ');
+      if (productLines.length >= 2) {
+        json.overlay_text = `${productLines[0]}\n${productLines.slice(1).join(' ')}`;
+      } else {
+        json.overlay_text = `${profile.productCallout}\nAqui`;
+      }
     }
     if (!json.button_text) {
       console.log('⚠️ No button_text from OpenAI, using fallback');

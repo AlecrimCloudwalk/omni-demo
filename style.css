@@ -454,7 +454,8 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   justify-content: flex-start;
 }
 
-.shuffle-controls .shuffle-btn {
+.shuffle-controls .shuffle-btn,
+.shuffle-controls .lock-btn {
   flex: 0 0 auto;
   padding: 10px 16px;
   background: #2a2b2f;
@@ -467,57 +468,27 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); f
   transition: all 0.2s ease;
 }
 
-.shuffle-controls .shuffle-btn:hover {
+.shuffle-controls .shuffle-btn:hover,
+.shuffle-controls .lock-btn:hover {
   background: #343539;
   transform: translateY(-1px);
 }
 
-.lock-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--muted);
+.shuffle-controls .shuffle-btn:disabled {
+  background: #1a1b1f;
+  color: #555;
+  border-color: #2a2b2f;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.lock-toggle input[type="checkbox"] {
-  display: none;
-}
-
-.checkmark-small {
-  width: 14px;
-  height: 14px;
-  border: 1px solid #2a2b2f;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.lock-toggle input[type="checkbox"]:checked + .checkmark-small {
+.shuffle-controls .lock-btn.locked {
   background: var(--purple);
+  color: #000;
   border-color: var(--purple);
 }
 
-.lock-toggle input[type="checkbox"]:checked + .checkmark-small::after {
-  content: "✓";
-  color: #000;
-  font-weight: bold;
-  font-size: 10px;
-}
-
-.lock-text {
-  font-size: 12px;
-  color: var(--muted);
-  user-select: none;
-}
-
-.lock-toggle input[type="checkbox"]:checked ~ .lock-text {
-  color: var(--purple);
-  font-weight: 500;
-}
+/* Lock toggle styles removed - now using button */
 button { appearance: none; background: #232427; color: var(--text); border: 1px solid #2c2e33; border-radius: 10px; padding: 10px 14px; cursor: pointer; }
 button.primary { background: linear-gradient(90deg, var(--green), var(--purple)); color: #101010; font-weight: 600; }
 button:disabled { opacity: 0.6; cursor: not-allowed; }
