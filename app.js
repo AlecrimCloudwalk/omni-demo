@@ -1255,7 +1255,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "1. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
         ...(isBRollEnabled ? [
           "2. PRIMEIRA CENA (VLOG STYLE): Horário + Ambientação: Mesmo ambiente da imagem, usando dados fornecidos. Personagem: Mesmo personagem da imagem, com ação idle apropriada (use mão não-dominante pois a mão principal segura a câmera). Contexto do trabalho: Mostre elementos relacionados ao trabalho/profissão no ambiente (sem texto visível).",
-          "3. CORTA PARA SEGUNDA CENA (B-ROLL): Adicione cena mostrando a MESMA PESSOA fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real."
+          "3. CORTA PARA SEGUNDA CENA (B-ROLL): Adicione cena mostrando a MESMA PESSOA, com a mesma roupa, no momento seguinte, fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real."
         ] : [
           "2. CENA ÚNICA (VLOG STYLE): Horário + Ambientação: Mesmo ambiente da imagem, usando dados fornecidos. Personagem: Mesmo personagem da imagem, com ação idle apropriada (use mão não-dominante pois a mão principal segura a câmera). Contexto do trabalho: Mostre elementos relacionados ao trabalho/profissão no ambiente (sem texto visível)."
         ]),
@@ -1263,18 +1263,18 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `EXEMPLOS DE ESTRUTURA (adapte para o perfil específico):`,
         `IMAGE EXEMPLO: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Ao fundo, fornos e pães expostos.'`,
         ...(isBRollEnabled ? [
-          `VIDEO EXEMPLO COM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Primeira cena: Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com a outra mão. Ao fundo, cadeiras de tatuagem e arte nas paredes. Corta para segunda cena: A mesma pessoa fazendo tatuagem no braço de cliente.'`
+          `VIDEO EXEMPLO COM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Primeira cena: Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com a outra mão. Ao fundo, cadeiras de tatuagem e arte nas paredes. Corta para segunda cena: A mesma pessoa, com a mesma roupa preta, no momento seguinte, fazendo tatuagem no braço de cliente.'`
         ] : [
           `VIDEO EXEMPLO SEM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com a outra mão. Ao fundo, cadeiras de tatuagem e arte nas paredes.'`
         ]),
         "",
         ...(isBRollEnabled ? [
           "EXEMPLOS DE B-ROLL POR PROFISSÃO:",
-          "- Tatuador: 'corta para a mesma pessoa fazendo tatuagem no braço de cliente'",
-          "- Padeiro: 'corta para a mesma pessoa amassando massa de pão'",
-          "- Mecânico: 'corta para a mesma pessoa consertando motor de carro'",
-          "- Jardineiro: 'corta para a mesma pessoa aparando plantas em jardim público de [cidade]'",
-          "- Construção: 'corta para a mesma pessoa operando equipamento em obra de [cidade]'",
+          "- Tatuador: 'corta para a mesma pessoa, com a mesma roupa, no momento seguinte, fazendo tatuagem no braço de cliente'",
+          "- Padeiro: 'corta para a mesma pessoa, com a mesma roupa, no momento seguinte, amassando massa de pão'",
+          "- Mecânico: 'corta para a mesma pessoa, com a mesma roupa, no momento seguinte, consertando motor de carro'",
+          "- Jardineiro: 'corta para a mesma pessoa, com a mesma roupa, no momento seguinte, aparando plantas em jardim público de [cidade]'",
+          "- Construção: 'corta para a mesma pessoa, com a mesma roupa, no momento seguinte, operando equipamento em obra de [cidade]'",
           ""
         ] : []),
         "",
