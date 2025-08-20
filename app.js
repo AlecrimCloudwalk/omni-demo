@@ -177,6 +177,10 @@ console.log('  - imageContainer:', !!imageContainer);
 console.log('  - seededitContainer:', !!seededitContainer);
 console.log('  - seedanceContainer:', !!seedanceContainer);
 console.log('  - videoOverlay:', !!videoOverlay);
+console.log('  - shuffleBtn:', !!shuffleBtn);
+console.log('  - lockCustomValuesEl:', !!lockCustomValuesEl);
+console.log('  - videoDuration10sEl:', !!videoDuration10sEl);
+console.log('  - productCalloutEl:', !!productCalloutEl);
 const imagePromptEl = document.getElementById("imagePrompt");
 const seedancePromptEl = document.getElementById("seedancePrompt");
 const previewImageRadio = document.getElementById("previewImage");
@@ -426,7 +430,8 @@ function captureFormData() {
     salesCount: salesCountEl.value,
     onlineShare: onlineShareEl.value,
     storefront: storefrontEl.value,
-    signatureItem: signatureItemEl.value.trim()
+    signatureItem: signatureItemEl.value.trim(),
+    productCallout: productCalloutEl.value.trim()
   };
 }
 
@@ -1126,10 +1131,19 @@ async function callOpenAIForPrompts(profile) {
     const randomClothing = getRandomClothingColor();
     const randomIdleAction = getRandomIdleAction();
     
+    console.log('🎭 Ação idle randomizada:', randomIdleAction);
+    console.log('🎨 Etnia randomizada:', randomEthnicity);
+    console.log('👕 Roupa randomizada:', randomClothing);
+    
     // Check if B-Roll is enabled
     const isBRollEnabled = enableBRollEl && enableBRollEl.checked;
     
+    // Check video duration setting
+    const is10SecondVideo = videoDuration10sEl && videoDuration10sEl.checked;
+    const videoDuration = is10SecondVideo ? 10 : 5;
+    
     console.log('🎬 B-Roll enabled:', isBRollEnabled);
+    console.log('🎬 Video duration:', videoDuration, 'seconds');
     
     const system = `Você é um roteirista e especialista em criação de prompts descritivos para geração de imagens e vídeos realistas em estilo POV (primeira pessoa) e selfie vlog com ultra realismo, 4K, coerência narrativa.
 
@@ -1184,17 +1198,19 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "ESTRUTURA PARA IMAGE_PROMPT:",
         "1. HORÁRIO + AMBIENTAÇÃO: Use o horário, tipo de negócio e cidade fornecidos. Interior/exterior baseado na profissão.",
         "2. PERSONAGEM: Determine gênero pelo nome, crie título profissional baseado no CNAE, use etnia e cidade fornecidas.",
-        "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
+        "3. CONTEXTO DO PRODUTO: Se aplicável, mostre elementos relacionados ao produto/serviço no ambiente (sem texto visível).",
+        "4. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
         "",
         "ESTRUTURA PARA VIDEO_PROMPT:",  
         "1. HORÁRIO + AMBIENTAÇÃO: Mesmo ambiente da imagem, usando dados fornecidos.",
         "2. PERSONAGEM: Mesmo personagem da imagem, com ação idle apropriada.",
-        "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
-        `4. B-ROLL ${isBRollEnabled ? '(OBRIGATÓRIO)' : '(DESABILITADO)'}: ${isBRollEnabled ? 'Adicione cena mostrando a MESMA PESSOA fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real.' : 'Não incluir B-roll.'}`,
+        "3. CONTEXTO DO PRODUTO: Se aplicável, mostre elementos relacionados ao produto/serviço no ambiente (sem texto visível).",
+        "4. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
+        `5. B-ROLL ${isBRollEnabled ? '(OBRIGATÓRIO)' : '(DESABILITADO)'}: ${isBRollEnabled ? 'Adicione cena mostrando a MESMA PESSOA fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real.' : 'Não incluir B-roll.'}`,
         "",
         `EXEMPLOS DE ESTRUTURA (adapte para o perfil específico):`,
-        `IMAGE EXEMPLO: 'Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO EXEMPLO: 'Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Corta para a mesma pessoa fazendo tatuagem em braço de cliente.'`,
+        `IMAGE EXEMPLO: 'Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Ao fundo, sistema de pagamento digital visível no balcão. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
+        `VIDEO EXEMPLO: 'Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera. Tablet com app de gestão aberto na mesa ao lado. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Corta para a mesma pessoa fazendo tatuagem em braço de cliente.'`,
         "",
         isBRollEnabled ? "EXEMPLOS DE B-ROLL POR PROFISSÃO:" : "",
         isBRollEnabled ? "- Tatuador: 'corta para a mesma pessoa fazendo tatuagem no braço de cliente'" : "",
@@ -1211,7 +1227,8 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `- Horário: "${randomTimeOfDay}" (usar este horário específico)`,
         `- Etnia: "${randomEthnicity}" (usar esta etnia específica)`,
         `- Ação idle: "${randomIdleAction}" (usar esta ação específica)`,
-        `- Produto/Serviço: "${profile.productCallout}" (usar para overlay_text)`,
+        `- Produto/Serviço a mencionar: "${profile.productCallout}" (integrar naturalmente nos prompts)`,
+        `- Duração do vídeo: ${videoDuration} segundos (considerar para complexidade da ação)`,
         "",
         "INSTRUÇÕES FINAIS:",
         "- Use os dados do perfil acima para criar prompts únicos e específicos",
