@@ -117,17 +117,17 @@ const GENDER_BY_CNAE = {
   "Loja de Roupas": "female",
 };
 
-// Ações idle para primeira cena
+// Ações idle para primeira cena (usando mão não-dominante pois a dominante segura câmera)
 const IDLE_ACTIONS = [
   "pose de herói olhando para câmera com confiança",
-  "dando tchau para câmera com sorriso caloroso",
-  "mostrando sua loja com gesto de orgulho",
-  "apontando para baixo na direita incentivando o click",
+  "dando tchau para câmera com mão direita e sorriso caloroso",
+  "mostrando sua loja com gesto de orgulho usando mão direita",
+  "apontando para baixo na direita com mão direita incentivando o click",
   "pose de empresário bem-sucedido sorrindo",
-  "fazendo sinal de positivo com polegar para cima",
-  "acenando animado para a câmera",
-  "pose de boas-vindas com braços abertos",
-  "sorrindo e apontando para produtos da loja",
+  "fazendo sinal de positivo com polegar direita para cima",
+  "acenando animado para a câmera com mão direita",
+  "pose de boas-vindas com braço direita aberto",
+  "sorrindo e apontando para o ambiente de trabalho com mão direita",
   "pose confiante de quem domina o negócio"
 ];
 
@@ -397,7 +397,7 @@ function initCustomTextTracking() {
   
   // Add visual feedback for custom product callout
   productCalloutEl.addEventListener('input', () => {
-    if (productCalloutEl.value.trim() && productCalloutEl.value.trim() !== "JIM assistente virtual no app") {
+    if (productCalloutEl.value.trim() && productCalloutEl.value.trim() !== "Gestão digital") {
       productCalloutEl.parentElement.classList.add('has-custom-value');
     } else {
       productCalloutEl.parentElement.classList.remove('has-custom-value');
@@ -1119,7 +1119,7 @@ function buildUserProfile() {
     onlineShare: Number(onlineShareEl.value || 0),
     storefront: storefrontEl.value,
     signatureItem: signatureItemEl.value.trim(),
-    productCallout: productCalloutEl.value.trim() || "JIM assistente virtual no app",
+    productCallout: productCalloutEl.value.trim() || "Gestão digital",
   };
 }
 
@@ -1167,7 +1167,7 @@ Sua tarefa é criar **dois prompts cinematográficos em português** para cada c
 RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     const brand = `Generate two separate cinematic prompts: one for image and one for video.`;
     const user = {
-      instruction: "Create two separate cinematic prompts in Portuguese: one for image generation and one for video generation about promoting Dinn AI assistant to business owners.",
+      instruction: "Create two separate cinematic prompts in Portuguese: one for image generation and one for video generation featuring business owners in their work environment.",
       constraints: {
         language: "pt-BR",
         videoModel: "bytedance/seedance-1-lite",
@@ -1207,29 +1207,37 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `- Instrumento musical: roupa casual, interior com violões e instrumentos expostos`,
         "",
         "ESTRUTURA PARA IMAGE_PROMPT:",
-        "1. HORÁRIO + AMBIENTAÇÃO: Use o horário, tipo de negócio e cidade fornecidos. Interior/exterior baseado na profissão.",
-        "2. PERSONAGEM: Determine gênero pelo nome, crie título profissional baseado no CNAE, use etnia e cidade fornecidas.",
-        "3. CONTEXTO DO PRODUTO: Se aplicável, mostre elementos relacionados ao produto/serviço no ambiente (sem texto visível).",
-        "4. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
+        "1. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
+        "2. HORÁRIO + AMBIENTAÇÃO: Use o horário, tipo de negócio e cidade fornecidos. Interior/exterior baseado na profissão.",
+        "3. PERSONAGEM: Determine gênero pelo nome, crie título profissional baseado no CNAE, use etnia e cidade fornecidas.",
+        "4. CONTEXTO DO TRABALHO: Mostre elementos relacionados ao trabalho/profissão no ambiente (sem texto visível).",
         "",
-        "ESTRUTURA PARA VIDEO_PROMPT:",  
-        "1. HORÁRIO + AMBIENTAÇÃO: Mesmo ambiente da imagem, usando dados fornecidos.",
-        "2. PERSONAGEM: Mesmo personagem da imagem, com ação idle apropriada.",
-        "3. CONTEXTO DO PRODUTO: Se aplicável, mostre elementos relacionados ao produto/serviço no ambiente (sem texto visível).",
-        "4. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
-        `5. B-ROLL ${isBRollEnabled ? '(OBRIGATÓRIO)' : '(DESABILITADO)'}: ${isBRollEnabled ? 'Adicione cena mostrando a MESMA PESSOA fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real.' : 'Não incluir B-roll.'}`,
+        "ESTRUTURA PARA VIDEO_PROMPT:",
+        "1. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
+        ...(isBRollEnabled ? [
+          "2. PRIMEIRA CENA (VLOG STYLE): Horário + Ambientação: Mesmo ambiente da imagem, usando dados fornecidos. Personagem: Mesmo personagem da imagem, com ação idle apropriada (use mão não-dominante pois a mão principal segura a câmera). Contexto do trabalho: Mostre elementos relacionados ao trabalho/profissão no ambiente (sem texto visível).",
+          "3. CORTA PARA SEGUNDA CENA (B-ROLL): Adicione cena mostrando a MESMA PESSOA fazendo o trabalho específico da profissão. Use interior do estabelecimento ou exterior/paisagem da cidade se for trabalho externo (ex: jardineiro, construção). Seja específico sobre a atividade profissional real."
+        ] : [
+          "2. CENA ÚNICA (VLOG STYLE): Horário + Ambientação: Mesmo ambiente da imagem, usando dados fornecidos. Personagem: Mesmo personagem da imagem, com ação idle apropriada (use mão não-dominante pois a mão principal segura a câmera). Contexto do trabalho: Mostre elementos relacionados ao trabalho/profissão no ambiente (sem texto visível)."
+        ]),
         "",
         `EXEMPLOS DE ESTRUTURA (adapte para o perfil específico):`,
-        `IMAGE EXEMPLO: 'Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Ao fundo, sistema de pagamento digital visível no balcão. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO EXEMPLO: 'Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera. Tablet com app de gestão aberto na mesa ao lado. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Corta para a mesma pessoa fazendo tatuagem em braço de cliente.'`,
+        `IMAGE EXEMPLO: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Final de tarde, interior de uma padaria em Santos, ambiente brasileiro, sem letreiros visíveis. Uma padeira, parda pele morena, Santos, roupa branca com avental, pose de herói olhando para câmera. Ao fundo, fornos e pães expostos.'`,
+        ...(isBRollEnabled ? [
+          `VIDEO EXEMPLO COM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Primeira cena: Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com mão direita. Ao fundo, cadeiras de tatuagem e arte nas paredes. Corta para segunda cena: A mesma pessoa fazendo tatuagem no braço de cliente.'`
+        ] : [
+          `VIDEO EXEMPLO SEM B-ROLL: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV. Meio-dia ensolarado, interior de um studio de tatuagem em Recife. Um tatuador, negro pele escura, Recife, roupa preta, acenando para câmera com mão direita. Ao fundo, cadeiras de tatuagem e arte nas paredes.'`
+        ]),
         "",
-        isBRollEnabled ? "EXEMPLOS DE B-ROLL POR PROFISSÃO:" : "",
-        isBRollEnabled ? "- Tatuador: 'corta para a mesma pessoa fazendo tatuagem no braço de cliente'" : "",
-        isBRollEnabled ? "- Padeiro: 'corta para a mesma pessoa amassando massa de pão'" : "",
-        isBRollEnabled ? "- Mecânico: 'corta para a mesma pessoa consertando motor de carro'" : "",
-        isBRollEnabled ? "- Jardineiro: 'corta para a mesma pessoa aparando plantas em jardim público de [cidade]'" : "",
-        isBRollEnabled ? "- Construção: 'corta para a mesma pessoa operando equipamento em obra de [cidade]'" : "",
-        "",
+        ...(isBRollEnabled ? [
+          "EXEMPLOS DE B-ROLL POR PROFISSÃO:",
+          "- Tatuador: 'corta para a mesma pessoa fazendo tatuagem no braço de cliente'",
+          "- Padeiro: 'corta para a mesma pessoa amassando massa de pão'",
+          "- Mecânico: 'corta para a mesma pessoa consertando motor de carro'",
+          "- Jardineiro: 'corta para a mesma pessoa aparando plantas em jardim público de [cidade]'",
+          "- Construção: 'corta para a mesma pessoa operando equipamento em obra de [cidade]'",
+          ""
+        ] : []),
         "",
         "DADOS DO PERFIL PARA USAR:",
         `- Cidade: "${profile.city}" (usar exatamente esta cidade, sem região)`,
@@ -1238,7 +1246,6 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         `- Horário: "${randomTimeOfDay}" (usar este horário específico)`,
         `- Etnia: "${randomEthnicity}" (usar esta etnia específica)`,
         `- Ação idle: "${randomIdleAction}" (usar esta ação específica)`,
-        `- Produto/Serviço a mencionar: "${profile.productCallout}" (integrar naturalmente nos prompts)`,
         `- Duração do vídeo: ${videoDuration} segundos (considerar para complexidade da ação)`,
         "",
         "INSTRUÇÕES FINAIS:",
@@ -1248,7 +1255,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "- Garanta que image_prompt e video_prompt sejam consistentes entre si",
         "",
         "RETORNE JSON com 'image_prompt', 'video_prompt', 'overlay_text' e 'button_text':",
-        `- overlay_text: 2 linhas (máx 15 chars cada) baseado em "${profile.productCallout}"`,
+        `- overlay_text: 2 linhas (máx 15 chars cada) relacionado ao tipo de negócio "${profile.cnae}"`,
         "- button_text: Call-to-action (máx 12 chars). Exemplos: 'Começar', 'Saber mais', 'Testar'",
       ],
     };
@@ -1347,11 +1354,11 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
     
     if (!json.overlay_text) {
       console.log('⚠️ No overlay_text from OpenAI, using fallback');
-      json.overlay_text = "Tap to Pay\nno iPhone";
+      json.overlay_text = "Seu Negócio\nDigital";
     }
     if (!json.button_text) {
       console.log('⚠️ No button_text from OpenAI, using fallback');
-      json.button_text = "Começar a usar";
+      json.button_text = "Começar";
     }
     
     console.log('🎯 Final overlay/button text to be used:');

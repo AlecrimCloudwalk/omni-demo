@@ -115,10 +115,7 @@
           </div>
         </div>
 
-                        <div class="product-callout">
-                  <label for="productCallout">Product/Service to Mention:</label>
-                  <input type="text" id="productCallout" value="JIM assistente virtual no app" placeholder="What product or service should be mentioned in the video">
-                </div>
+
                 <div class="action-buttons">
                   <button id="generateBtn" type="button" class="generate-btn">Generate</button>
                 </div>
@@ -128,6 +125,16 @@
       <div class="profile-section collapsed">
         <div class="profile-toggle" onclick="if(window.toggleProfile) window.toggleProfile(); else console.warn('toggleProfile not loaded yet')">
           <h3>Customer Profile</h3>
+        </div>
+        <div class="profile-actions">
+          <div class="shuffle-controls">
+            <button id="shuffleBtn" type="button" class="shuffle-btn">🎲 Shuffle</button>
+            <label class="lock-toggle">
+              <input id="lockCustomValues" type="checkbox">
+              <span class="checkmark-small"></span>
+              <span class="lock-text">Lock custom</span>
+            </label>
+          </div>
         </div>
         <div class="profile-content">
         <div class="form-grid">
@@ -192,17 +199,7 @@
             <input id="signatureItem" type="text" placeholder="Pão francês artesanal" />
           </label>
         </div>
-        
-        <div class="profile-actions">
-          <div class="shuffle-controls">
-            <button id="shuffleBtn" type="button" class="shuffle-btn">🎲 Shuffle</button>
-            <label class="lock-toggle">
-              <input id="lockCustomValues" type="checkbox">
-              <span class="checkmark-small"></span>
-              <span class="lock-text">Lock custom</span>
-            </label>
-          </div>
-        </div>
+
         </div>
       </div>
     </section>
@@ -210,7 +207,7 @@
     <!-- CENTER COLUMN: Generated Content -->
     <section class="center-column">
       <div class="generated-texts">
-        <h3>Generated Texts</h3>
+        <h3>Content Settings</h3>
         <div class="text-results">
           <div class="overlay-text-result">
             <label>Overlay Text: <small>(editable)</small></label>
@@ -221,6 +218,11 @@
             <label>Button Text: <small>(editable)</small></label>
             <input type="text" id="buttonTextDisplay" placeholder="Generated button text will appear here..." maxlength="15">
             <div class="text-hint">Max 15 chars</div>
+          </div>
+          <div class="product-callout-result">
+            <label>Key Message: <small>(what to promote)</small></label>
+            <input type="text" id="productCallout" value="JIM assistente virtual no app" placeholder="What product or service should be mentioned in the video" maxlength="50">
+            <div class="text-hint">Product or service to highlight in the content</div>
           </div>
           <div class="custom-notes-result">
             <label>Custom Notes: <small>(optional)</small></label>
