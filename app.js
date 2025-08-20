@@ -394,6 +394,15 @@ function initCustomTextTracking() {
       ownerNameEl.parentElement.classList.remove('has-custom-value');
     }
   });
+  
+  // Add visual feedback for custom product callout
+  productCalloutEl.addEventListener('input', () => {
+    if (productCalloutEl.value.trim() && productCalloutEl.value.trim() !== "JIM assistente virtual no app") {
+      productCalloutEl.parentElement.classList.add('has-custom-value');
+    } else {
+      productCalloutEl.parentElement.classList.remove('has-custom-value');
+    }
+  });
 }
 
 function updateTextInputStatus() {
@@ -443,7 +452,8 @@ function hasNonEmptyFormData() {
          originalFormData.avgTicket || 
          originalFormData.salesCount || 
          originalFormData.onlineShare || 
-         originalFormData.signatureItem;
+         originalFormData.signatureItem ||
+         originalFormData.productCallout;
 }
 
 init();
@@ -887,6 +897,7 @@ function fillForm(d, shouldLockCustom = false) {
   if (!shouldLockCustom || !originalFormData.signatureItem) {
     signatureItemEl.value = d.signatureItem || "";
   }
+  // Don't shuffle productCallout - it's user's custom setting that should be preserved
 }
 
 function selectValue(element, val) {
