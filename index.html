@@ -89,17 +89,23 @@
             <span class="option-price">Free</span>
           </label>
           <label class="option-toggle">
-            <input id="enableVeo3" type="checkbox" checked>
+            <input id="enableSeedance" type="checkbox" checked>
             <span class="checkmark"></span>
-            <span class="option-text">Generate Video</span>
-            <span class="option-price">$3.20</span>
+            <span class="option-text">Generate Video (Seedance Lite)</span>
+            <span class="option-price">$0.09</span>
+          </label>
+          <label class="option-toggle">
+            <input id="enableBRoll" type="checkbox">
+            <span class="checkmark"></span>
+            <span class="option-text">Add B-Roll Scene</span>
+            <span class="option-price">Free</span>
           </label>
         </div>
         
         <div class="pricing-total">
           <div class="total-display">
             <span class="total-label">Estimated Total:</span>
-            <span id="totalPrice" class="total-amount">$3.23</span>
+            <span id="totalPrice" class="total-amount">$0.12</span>
           </div>
         </div>
 
@@ -230,9 +236,9 @@
       </div>
       <div class="step">
         <h3>Generated Video</h3>
-        <div id="veo3Status" class="status">Waiting…</div>
-        <div id="veo3Prompt" class="prompt-display"></div>
-        <div id="veo3Container" class="media"></div>
+        <div id="seedanceStatus" class="status">Waiting…</div>
+        <div id="seedancePrompt" class="prompt-display"></div>
+        <div id="seedanceContainer" class="media"></div>
       </div>
     </section>
 
@@ -252,10 +258,6 @@
                   <label class="preview-switch">
                     <input type="radio" name="previewMode" value="video" id="previewVideo">
                     <span>Show Video</span>
-                  </label>
-                  <label class="audio-toggle">
-                    <input type="checkbox" id="videoAudioToggle">
-                    <span>🔊 Video Audio</span>
                   </label>
                 </div>
         <div class="phone-mockup">
@@ -301,7 +303,7 @@
   </main>
 
   <footer class="footer">
-    <small>Models: Seedream-3 (image), Veo3-Fast (video). Content: pt-BR. UI: English.</small>
+    <small>Models: Seedream-3 (image), Seedance-1-Lite (video). Content: pt-BR. UI: English.</small>
   </footer>
 
   <script src="./app.js?v=20241228" type="module"></script>

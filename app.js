@@ -117,6 +117,20 @@ const GENDER_BY_CNAE = {
   "Loja de Roupas": "female",
 };
 
+// Ações idle para primeira cena
+const IDLE_ACTIONS = [
+  "pose de herói olhando para câmera com confiança",
+  "dando tchau para câmera com sorriso caloroso",
+  "mostrando sua loja com gesto de orgulho",
+  "apontando para baixo na direita incentivando o click",
+  "pose de empresário bem-sucedido sorrindo",
+  "fazendo sinal de positivo com polegar para cima",
+  "acenando animado para a câmera",
+  "pose de boas-vindas com braços abertos",
+  "sorrindo e apontando para produtos da loja",
+  "pose confiante de quem domina o negócio"
+];
+
 // API keys are now handled server-side via environment variables
 
 const cnaeEl = document.getElementById("cnae");
@@ -140,7 +154,8 @@ const generateBtn = document.getElementById("generateBtn");
 const enableImageEl = document.getElementById("enableImage");
 const enableSeededitEl = document.getElementById("enableSeededit");
 const useStartFrameEl = document.getElementById("useStartFrame");
-const enableVeo3El = document.getElementById("enableVeo3");
+const enableSeedanceEl = document.getElementById("enableSeedance");
+const enableBRollEl = document.getElementById("enableBRoll");
 const totalPriceEl = document.getElementById("totalPrice");
 const lockCustomValuesEl = document.getElementById("lockCustomValues");
 const overlayTextDisplayEl = document.getElementById("overlayTextDisplay");
@@ -149,24 +164,23 @@ const customNotesDisplayEl = document.getElementById("customNotesDisplay");
 
 const imageStatus = document.getElementById("imageStatus");
 const seededitStatus = document.getElementById("seededitStatus");
-const veo3Status = document.getElementById("veo3Status");
+const seedanceStatus = document.getElementById("seedanceStatus");
 const imageContainer = document.getElementById("imageContainer");
 const seededitContainer = document.getElementById("seededitContainer");
-const veo3Container = document.getElementById("veo3Container");
+const seedanceContainer = document.getElementById("seedanceContainer");
 const videoOverlay = document.getElementById("videoOverlay");
 
 // Debug container initialization
 console.log('🔧 DOM Elements initialized:');
 console.log('  - imageContainer:', !!imageContainer);
 console.log('  - seededitContainer:', !!seededitContainer);
-console.log('  - veo3Container:', !!veo3Container);
+console.log('  - seedanceContainer:', !!seedanceContainer);
 console.log('  - videoOverlay:', !!videoOverlay);
 const imagePromptEl = document.getElementById("imagePrompt");
-const veo3PromptEl = document.getElementById("veo3Prompt");
+const seedancePromptEl = document.getElementById("seedancePrompt");
 const previewImageRadio = document.getElementById("previewImage");
 const previewEditedRadio = document.getElementById("previewEdited");
 const previewVideoRadio = document.getElementById("previewVideo");
-const videoAudioToggle = document.getElementById("videoAudioToggle");
 
 // CNAE Search Variables
 let filteredCnaeOptions = [];
@@ -454,7 +468,6 @@ function init() {
   previewImageRadio.addEventListener("change", updatePreviewMode);
   previewEditedRadio.addEventListener("change", updatePreviewMode);
   previewVideoRadio.addEventListener("change", updatePreviewMode);
-  videoAudioToggle.addEventListener("change", updateVideoAudio);
 
   // Pricing calculation event listeners
   if (enableImageEl) enableImageEl.addEventListener('change', () => {
@@ -462,10 +475,11 @@ function init() {
     updateOptionDependencies();
   });
   if (enableSeededitEl) enableSeededitEl.addEventListener('change', updatePricing);
-  if (enableVeo3El) enableVeo3El.addEventListener('change', () => {
+  if (enableSeedanceEl) enableSeedanceEl.addEventListener('change', () => {
     updatePricing();
     updateStartFrameVisualFeedback();
   });
+  if (enableBRollEl) enableBRollEl.addEventListener('change', updatePricing);
   if (useStartFrameEl) useStartFrameEl.addEventListener('change', () => {
     updatePricing();
     updateStartFrameVisualFeedback();
@@ -503,11 +517,11 @@ function updatePricing() {
     total += 0.03; // Seededit
   }
   
-  if (enableVeo3El && enableVeo3El.checked) {
-    total += 3.20; // Veo3 Fast
+  if (enableSeedanceEl && enableSeedanceEl.checked) {
+    total += 0.09; // Seedance Lite 480p (5 segundos * $0.018)
   }
   
-  // Start frame is free, no cost
+  // B-Roll and start frame are free, no cost
   
   if (totalPriceEl) {
     totalPriceEl.textContent = `$${total.toFixed(2)}`;
@@ -620,6 +634,69 @@ function getRandomClothingColor() {
   }
 }
 
+function getRandomIdleAction() {
+  return getRandomFromArray(IDLE_ACTIONS);
+}
+
+function getBRollText(cnae, city) {
+  const businessType = cnae ? cnae.split(' - ')[1]?.toLowerCase() : '';
+  
+  const brollScenes = {
+    'padaria': [
+      `, corta a cena para o padeiro fazendo pão dentro da padaria em ${city}`,
+      `, corta para a cena do proprietário da padaria preparando doces em ${city}`,
+      `, corta para o comerciante arrumando vitrine de pães em ${city}`
+    ],
+    'farmácia': [
+      `, corta para o farmacêutico organizando medicamentos na farmácia em ${city}`,
+      `, corta para o proprietário atendendo cliente na farmácia em ${city}`,
+      `, corta para cena do farmacêutico conferindo estoque em ${city}`
+    ],
+    'açougue': [
+      `, corta para o açougueiro preparando carnes no açougue em ${city}`,
+      `, corta para o proprietário cortando carne fresca em ${city}`,
+      `, corta para cena do comerciante organizando produtos no açougue em ${city}`
+    ],
+    'marcenaria': [
+      `, corta para o marceneiro trabalhando com madeira na oficina em ${city}`,
+      `, corta para o artesão criando móveis na marcenaria em ${city}`,
+      `, corta para cena do proprietário usando ferramentas em ${city}`
+    ],
+    'barbearia': [
+      `, corta para o barbeiro cortando cabelo na barbearia em ${city}`,
+      `, corta para o profissional fazendo barba de cliente em ${city}`,
+      `, corta para cena do proprietário organizando produtos da barbearia em ${city}`
+    ],
+    'oficina': [
+      `, corta para o mecânico trabalhando em carro na oficina em ${city}`,
+      `, corta para o proprietário consertando motor em ${city}`,
+      `, corta para cena do profissional usando ferramentas na oficina em ${city}`
+    ],
+    'restaurante': [
+      `, corta para o chef preparando pratos na cozinha em ${city}`,
+      `, corta para o proprietário cozinhando no restaurante em ${city}`,
+      `, corta para cena do comerciante servindo clientes em ${city}`
+    ],
+    'loja': [
+      `, corta para o comerciante organizando produtos na loja em ${city}`,
+      `, corta para o proprietário atendendo clientes na loja em ${city}`,
+      `, corta para cena do empresário arrumando vitrine em ${city}`
+    ]
+  };
+  
+  // Find matching profession
+  let scenes = brollScenes['loja']; // default
+  
+  for (const [key, value] of Object.entries(brollScenes)) {
+    if (businessType.includes(key)) {
+      scenes = value;
+      break;
+    }
+  }
+  
+  return getRandomFromArray(scenes);
+}
+
 function updatePreviewMode() {
   if (!videoOverlay) return;
   
@@ -669,7 +746,7 @@ function updatePreviewMode() {
     }
   } else if (showVideo) {
     // Show the generated video in the preview (if available)
-    const videoInCenter = veo3Container.querySelector('video');
+    const videoInCenter = seedanceContainer.querySelector('video');
     console.log('🎬 Video preview mode - found video element:', !!videoInCenter);
     if (videoInCenter) {
       console.log('🎬 Video src:', videoInCenter.src);
@@ -680,13 +757,13 @@ function updatePreviewMode() {
       videoPlaceholder.className = 'video-placeholder with-content'; // Add class for content centering
       const previewVideo = document.createElement('video');
       previewVideo.src = videoInCenter.src;
-      previewVideo.muted = !videoAudioToggle.checked; // Use audio toggle state
+      previewVideo.muted = true; // Seedance videos don't have audio
       previewVideo.loop = true;
       previewVideo.autoplay = true;
       previewVideo.style.width = '100%';
       previewVideo.style.height = '100%';
       previewVideo.style.objectFit = 'cover';
-      previewVideo.id = 'previewVideoElement'; // Add ID for audio control
+      previewVideo.id = 'previewVideoElement';
       previewVideo.onloadedmetadata = () => {
         console.log('✅ Preview video metadata loaded');
       };
@@ -709,12 +786,7 @@ function updatePreviewMode() {
   }
 }
 
-function updateVideoAudio() {
-  const previewVideo = document.getElementById('previewVideoElement');
-  if (previewVideo) {
-    previewVideo.muted = !videoAudioToggle.checked;
-  }
-}
+// Audio removed - Seedance videos don't have audio
 
 function updateStartFrameVisualFeedback() {
   const useStartFrameLabel = useStartFrameEl?.closest('.option-toggle');
@@ -722,7 +794,7 @@ function updateStartFrameVisualFeedback() {
   
   const hasImage = imageContainer.querySelector('img') !== null;
   const hasEditedImage = seededitContainer?.querySelector('img') !== null;
-  const isVideoEnabled = enableVeo3El.checked;
+  const isVideoEnabled = enableSeedanceEl.checked;
   const isStartFrameChecked = useStartFrameEl.checked;
   
   // Only disable if video generation is disabled (user can set preference before generating)
@@ -917,7 +989,7 @@ async function onGenerate() {
   // Generate based on checkbox selections in proper order: image, seededit, video
   let imageUrl = null;
   let editedImageUrl = null;
-  let veo3Url = null;
+  let seedanceUrl = null;
   
   // Step 1: Generate image first if needed
   if (enableImageEl.checked) {
@@ -942,10 +1014,10 @@ async function onGenerate() {
   }
   
   // Step 3: Generate video with or without start frame
-  if (enableVeo3El.checked) {
-    if (veo3Status) veo3Status.innerHTML = '🎬 Generating video (~3-5 min)… <img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 20px; height: 20px; vertical-align: middle;">';
+  if (enableSeedanceEl.checked) {
+    if (seedanceStatus) seedanceStatus.innerHTML = '🎬 Generating video (~1-2 min)… <img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 20px; height: 20px; vertical-align: middle;">';
     // Add loading GIF to video container
-    if (veo3Container) veo3Container.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; flex-direction: column;"><img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 80px; height: 80px;"><p style="margin-top: 10px; color: #a8a8ad; font-size: 14px;">Generating video...</p></div>';
+    if (seedanceContainer) seedanceContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; flex-direction: column;"><img src="https://media.giphy.com/media/xTkcEQACH24SMPxIQg/giphy.gif" style="width: 80px; height: 80px;"><p style="margin-top: 10px; color: #a8a8ad; font-size: 14px;">Generating video...</p></div>';
     
     // Use start frame: prefer edited image, fallback to original image
     let startFrameUrl = null;
@@ -985,21 +1057,21 @@ async function onGenerate() {
       startFrameUrl = null;
     }
     
-    veo3Url = await generateVeo3Video(promptResult.video_prompt, startFrameUrl);
+    seedanceUrl = await generateSeedanceVideo(promptResult.video_prompt, startFrameUrl);
   } else {
-    if (veo3Status) veo3Status.textContent = "Disabled (checkbox unchecked)";
+    if (seedanceStatus) seedanceStatus.textContent = "Disabled (checkbox unchecked)";
   }
   
   console.log('Generation complete:', { 
     imageUrl: imageUrl ? imageUrl.substring(0, 50) + '...' : null, 
-    veo3Url: veo3Url ? veo3Url.substring(0, 50) + '...' : null,
+    seedanceUrl: seedanceUrl ? seedanceUrl.substring(0, 50) + '...' : null,
     imageEnabled: enableImageEl.checked,
-    veo3Enabled: enableVeo3El.checked
+    seedanceEnabled: enableSeedanceEl.checked
   });
   
   // Additional debug logging
   if (imageUrl) console.log('🔗 Full imageUrl:', imageUrl);
-  if (veo3Url) console.log('🎬 Full veo3Url:', veo3Url);
+  if (seedanceUrl) console.log('🎬 Full seedanceUrl:', seedanceUrl);
 
   lockUI(false);
 }
@@ -1013,15 +1085,15 @@ function clearOutputs() {
   // Set placeholder content for image and video containers
   imageContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; color: #666; font-size: 14px;">Image will appear here</div>';
   if (seededitContainer) seededitContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; color: #666; font-size: 14px;">Text removed image will appear here</div>';
-  if (veo3Container) veo3Container.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; color: #666; font-size: 14px;">Video will appear here</div>';
+  if (seedanceContainer) seedanceContainer.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 200px; color: #666; font-size: 14px;">Video will appear here</div>';
   
   imagePromptEl.innerHTML = "";
-  if (veo3PromptEl) veo3PromptEl.innerHTML = "";
+  if (seedancePromptEl) seedancePromptEl.innerHTML = "";
   imagePromptEl.classList.remove("show");
-  if (veo3PromptEl) veo3PromptEl.classList.remove("show");
+  if (seedancePromptEl) seedancePromptEl.classList.remove("show");
   imageStatus.textContent = "Waiting…";
   if (seededitStatus) seededitStatus.textContent = "Waiting…";
-  if (veo3Status) veo3Status.textContent = "Waiting…";
+  if (seedanceStatus) seedanceStatus.textContent = "Waiting…";
   
   // Update start frame visual feedback
   updateStartFrameVisualFeedback();
@@ -1033,9 +1105,9 @@ function displayPrompts(promptResult) {
   imagePromptEl.classList.add("show");
   
   // Always show video prompt  
-  if (veo3PromptEl) {
-    veo3PromptEl.textContent = `Veo3 Video Prompt:\n${promptResult.video_prompt}`;
-    veo3PromptEl.classList.add("show");
+  if (seedancePromptEl) {
+    seedancePromptEl.textContent = `Seedance Video Prompt:\n${promptResult.video_prompt}`;
+    seedancePromptEl.classList.add("show");
   }
   
   // Update text inputs only if they don't have custom values
@@ -1170,12 +1242,25 @@ async function callOpenAIForPrompts(profile) {
     
     const randomEthnicity = getRandomEthnicity();
     const randomClothing = getRandomClothingColor();
+    const randomIdleAction = getRandomIdleAction();
     
-    const system = `Você é um roteirista e especialista em criação de prompts descritivos para geração de imagens e vídeos realistas em estilo POV (primeira pessoa) e selfie vlog com ultra realismo, 4K, efeitos sonoros integrados e coerência narrativa.
+    // Check if B-Roll is enabled
+    const isBRollEnabled = enableBRollEl && enableBRollEl.checked;
+    const brollText = isBRollEnabled ? getBRollText(profile.cnae, profile.city) : '';
+    
+    // Ensure brollText is always a string
+    const safeBRollText = brollText || '';
+    
+    console.log('🎬 B-Roll enabled:', isBRollEnabled);
+    if (isBRollEnabled) {
+      console.log('🎬 B-Roll text:', safeBRollText);
+    }
+    
+    const system = `Você é um roteirista e especialista em criação de prompts descritivos para geração de imagens e vídeos realistas em estilo POV (primeira pessoa) e selfie vlog com ultra realismo, 4K, coerência narrativa.
 
 Sua tarefa é criar **dois prompts cinematográficos em português** para cada cliente:
 1. Um para IMAGEM (pessoa segurando celular em selfie)
-2. Um para VÍDEO Veo3 (pessoa falando para câmera)
+2. Um para VÍDEO Seedance (pessoa em ação idle, depois falando para câmera)
 
 ⚠️ ALERTA CRÍTICO DE COMPLIANCE: NUNCA use dados pessoais reais (nomes, empresas). Crie SEMPRE personagens genéricos anônimos. Impersonation é proibida por lei.
 
@@ -1185,7 +1270,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
       instruction: "Create two separate cinematic prompts in Portuguese: one for image generation and one for video generation about promoting Dinn AI assistant to business owners.",
       constraints: {
         language: "pt-BR",
-        videoModel: "google/veo-3-fast",
+        videoModel: "bytedance/seedance-1-lite",
         imageModel: "bytedance/seedream-3",
       },
       profile,
@@ -1216,18 +1301,18 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
         "",
         "ESTRUTURA PARA IMAGE_PROMPT:",
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], interior/exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, descrição cinematográfica, sem letreiros visíveis'`,
-        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada].'`,
+        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}.'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'",
         "",
         "ESTRUTURA PARA VIDEO_PROMPT:",  
         `1. HORÁRIO + AMBIENTAÇÃO: '[horário do dia], mesmo ambiente da imagem na ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}'`,
-        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada].'`,
+        `2. PERSONAGEM: '[título profissional baseado no CNAE], [etnia], ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}.'`,
         "3. CÂMERA: 'Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.'",
-        `4. FALA: 'fala da pessoa: "${randomVideoText}"'`,
+        `4. FALA: 'fala da pessoa: "${randomVideoText}"${safeBRollText}'`,
         "",
         `Exemplo de estrutura (USE OS DADOS EXATOS DO PERFIL):`,
-        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
-        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada]. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText}"'`,
+        `IMAGE: '${randomTimeOfDay}, exterior de uma ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}, ${profile.region}, ambiente brasileiro, sem letreiros visíveis. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.'`,
+        `VIDEO: '${randomTimeOfDay}, mesmo ambiente da ${profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja'} em ${profile.city}. [título profissional], ${randomEthnicity}, ${profile.city}, [roupa profissional apropriada], ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.\\n\\nfala da pessoa: "${randomVideoText}"${safeBRollText}'`,
         "",
         "",
         "INSTRUÇÕES CRÍTICAS FINAIS:",
@@ -1335,7 +1420,7 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
       const businessType = profile.cnae ? profile.cnae.split(' - ')[1] || 'loja' : 'loja';
       const businessContext = businessType.includes('instrumento') ? ', ao fundo violões e instrumentos musicais' : '';
       // Let LLM handle gender and profession determination based on name and CNAE
-      json.image_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
+      json.image_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}, ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível.`;
     }
     
     if (!json.video_prompt) {
@@ -1357,9 +1442,9 @@ RETORNE JSON com 'image_prompt' e 'video_prompt'.`;
       }
       
       // Let LLM handle gender and profession determination based on name and CNAE
-      json.video_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
+      json.video_prompt = `${randomTimeOfDay}, interior de uma ${businessType} brasileira moderna, iluminação natural, ao fundo produtos e clientes${businessContext}, sem letreiros visíveis. Uma pessoa brasileira proprietária, ${randomEthnicity}, ${city}, ${randomIdleAction}. Foto estilo selfie, perspectiva de primeira pessoa, ângulo de selfie, sem câmera visível. Com a câmera Selfie VLOG, próxima ao rosto. Câmera subjetiva, POV.
 
-fala da pessoa: "${fallbackMessage}"`;
+fala da pessoa: "${fallbackMessage}"${safeBRollText}`;
     }
     
     // Add default overlay and button text if not provided
@@ -1751,7 +1836,7 @@ async function generateSeededit(imageUrl) {
   }
 }
 
-async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
+async function generateSeedanceVideo(videoPrompt, startFrameUrl = null) {
   try {
     // Prompt is already displayed by displayPrompts() function
          // Status is already set by caller function
@@ -1772,11 +1857,14 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
         console.log(`🎬 Video Seed: ${videoSeed} (Master: ${window.currentMasterSeed})`);
 
         const body = {
-          model: 'google/veo-3-fast',
+          model: 'bytedance/seedance-1-lite',
           input: {
             prompt: videoPrompt,
-            aspect_ratio: "16:9",
             duration: 5,
+            resolution: "480p",
+            aspect_ratio: "16:9",
+            fps: 24,
+            camera_fixed: false,
             seed: videoSeed
           }
         };
@@ -1855,10 +1943,17 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
       
     } else {
        // Use serverless function (Vercel/local)
-       const endpoint = `${API_BASE}/replicate/veo3`;
-       const requestBody = { prompt: videoPrompt };
+       const endpoint = `${API_BASE}/replicate/seedance`;
+       const requestBody = { 
+         prompt: videoPrompt,
+         duration: 5,
+         resolution: "480p",
+         aspect_ratio: "16:9",
+         fps: 24,
+         camera_fixed: false
+       };
        if (startFrameUrl) {
-         requestBody.startFrame = startFrameUrl;
+         requestBody.image = startFrameUrl;
          console.log('🖼️ Using start frame for serverless:', startFrameUrl);
        }
        const r = await fetch(endpoint, {
@@ -1870,10 +1965,11 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
        const j = await r.json();
        videoUrl = j.url;
      }
-    if (videoUrl && veo3Container) {
+    if (videoUrl && seedanceContainer) {
       console.log('🎬 Creating video element with URL:', videoUrl);
       const video = document.createElement("video");
       video.controls = true;
+      video.muted = true; // Seedance videos don't have audio
       video.src = videoUrl;
       video.onloadedmetadata = () => {
         console.log('✅ Video metadata loaded successfully');
@@ -1881,26 +1977,26 @@ async function generateVeo3Video(videoPrompt, startFrameUrl = null) {
       video.onerror = (e) => {
         console.error('❌ Video loading error:', e);
       };
-      veo3Container.innerHTML = "";
-      veo3Container.appendChild(video);
+      seedanceContainer.innerHTML = "";
+      seedanceContainer.appendChild(video);
       const a = document.createElement("a");
-      a.href = videoUrl; a.download = "veo3-video.mp4"; a.textContent = "📥 Download";
+      a.href = videoUrl; a.download = "seedance-video.mp4"; a.textContent = "📥 Download";
       a.className = "download-btn";
-      veo3Container.appendChild(a);
+      seedanceContainer.appendChild(a);
       
       // Update preview based on current mode
       console.log('🔄 Updating preview mode after video creation');
       updatePreviewMode();
       
-      if (veo3Status) veo3Status.textContent = "Done.";
+      if (seedanceStatus) seedanceStatus.textContent = "Done.";
     } else {
-      console.log('❌ Video generation failed - videoUrl:', videoUrl, 'veo3Container:', !!veo3Container);
-      if (veo3Status) veo3Status.textContent = "Veo3 video generation failed.";
+      console.log('❌ Video generation failed - videoUrl:', videoUrl, 'seedanceContainer:', !!seedanceContainer);
+      if (seedanceStatus) seedanceStatus.textContent = "Seedance video generation failed.";
     }
     return videoUrl;
   } catch (e) {
     console.error(e);
-    if (veo3Status) veo3Status.textContent = "Veo3 video generation failed.";
+    if (seedanceStatus) seedanceStatus.textContent = "Seedance video generation failed.";
     return null;
   }
 }
